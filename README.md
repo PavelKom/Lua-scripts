@@ -7,5 +7,4 @@ Supported mods:
 * AAI (vehicles, structures, zones)
 * Bob's mods (items and recipes)
 * Crafting Combinator
-* Inventory Sensor
 * Recursive Blueprints

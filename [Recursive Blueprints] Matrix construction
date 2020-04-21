@@ -1,0 +1,28 @@
+--Matrix construction (stone bricks, concrete, etc.)
+--Clear output
+output = {}
+--Distance
+local distance_X = 10
+local distance_Y = 10
+--Coordinates (offset)
+var[1] = 0
+var[2] = 0
+--Top left corner coordinates (offset)
+local TLC_X = 0 - (distance_X / 2)
+local TLC_Y = 0 - (distance_Y / 2)
+--Scales
+local Scale_X = 1
+local Scale_Y = 1
+on_nth_tick[60] = function(event)
+	var[1] = var[1] + 1
+	if var[1] >= distance_X then
+		var[1] = 0
+		var[2] = var[2] + 1
+	end
+	if var[2] >= distance_Y then
+		var[2] = 0
+	end
+	output["signal-X"] = (var[1] + TLC_X) * Scale_X
+	output["signal-Y"] = (var[2] + TLC_Y) * Scale_Y
+	output["construction-robot"] = 1
+end

@@ -1,0 +1,73 @@
+--Checking cells for resources
+--Clear output
+output = {}
+--Vanilla ores:
+--	"coal",
+--	"stone",
+--	"iron-ore",
+--	"copper-ore",
+--	"uranium-ore"
+--Robot Mining Site:
+--	"thorium-rubble",
+--	"uranium-rubble"
+--Bob's Ores:
+--	"gem-ore",
+--	"ruby-ore",
+--	"sapphire-ore",
+--	"bauxite-ore",
+--	"cobalt-ore",
+--	"gold-ore",
+--	"lead-ore",
+--	"nickel-ore",
+--	"quartz",
+--	"rutile-ore",
+--	"silver-ore",
+--	"thorium-ore",
+--	"tin-ore",
+--	"tungsten-ore",
+--	"zinc-ore",
+--	"emerald-ore",
+--	"amethyst-ore",
+--	"topaz-ore",
+--	"diamond-ore"
+local ores = {
+	"coal",
+	"stone",
+	"iron-ore",
+	"copper-ore",
+	"uranium-ore",
+	"thorium-rubble",
+	"uranium-rubble",
+	"gem-ore",
+	"ruby-ore",
+	"sapphire-ore",
+	"bauxite-ore",
+	"cobalt-ore",
+	"gold-ore",
+	"lead-ore",
+	"nickel-ore",
+	"quartz",
+	"rutile-ore",
+	"silver-ore",
+	"thorium-ore",
+	"tin-ore",
+	"tungsten-ore",
+	"zinc-ore",
+	"emerald-ore",
+	"amethyst-ore",
+	"topaz-ore",
+	"diamond-ore"
+}
+local zone = "zone-circle-yellow"
+on_nth_tick[1] = function(event)
+	var[1] = 0
+	output = {}
+	for i = 1, #ores do
+		var[1] = var[1] + (rednet[ores[i]] or 0)
+	end
+	if var[1] > 0 then
+		output["signal-x-tile"] = rednet["signal-x-tile"]
+		output["signal-y-tile"] = rednet["signal-y-tile"]
+		output[zone] = 1
+	end
+end

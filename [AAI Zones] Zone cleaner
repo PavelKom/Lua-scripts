@@ -1,0 +1,55 @@
+--Remove all zones
+--Clear output
+output = {}
+local colour = {
+	"black",
+	"green",
+	"teal",
+	"cyan",
+	"blue",
+	"purple",
+	"magenta",
+	"red",
+	"orange",
+	"yellow",
+	"olive",
+	"white"
+}
+local patterns = {
+"diagonal-left",
+	"diagonal-right",
+	"horizontal",
+	"vertical",
+	"box",
+	"plus",
+	"x",
+	"circle",
+	"disc",
+	"arrow-n",
+	"arrow-e",
+	"arrow-s",
+	"arrow-w",
+	"arrow-ne",
+	"arrow-se",
+	"arrow-sw",
+	"arrow-nw"
+}
+var[2] = 0
+var[3] = 1
+var[4] = ""
+on_nth_tick[10] = function(event)
+	var[1] = rednet["signal-count"] or 0
+	if var[1] == 0 then
+		var[2] = var[2] + 1
+		output = {}
+	end
+	if var[2] > #colour then
+		var[2] = 1
+		var[3] = var[3] + 1
+	end
+	if var[3] > #patterns then
+		var[3]  = 1
+	end
+	local zone = "zone-"..patterns[var[3]].."-"..colour[var[2]]
+	output[zone] = 1
+end
