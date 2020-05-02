@@ -1,0 +1,20 @@
+on_nth_tick[1] = function(event)
+	var[1] = 0
+	output = {}
+	for i = 1, #enemy_building do
+		var[1] = var[1] + (rednet[enemy_building[i]] or 0)
+	end
+	if var[1] > 0 then
+		output["signal-x-tile"] = rednet["signal-x-tile"] or 0
+		output["signal-y-tile"] = rednet["signal-y-tile"] or 0
+		output[zone_enemy_default] = 1
+	else
+		for ore, zone = ipairs(advChecker_zone) do
+			if rednet[ore] ~= nil then
+				output["signal-x-tile"] = rednet["signal-x-tile"] or 0
+				output["signal-y-tile"] = rednet["signal-y-tile"] or 0
+				output[zone] = 1
+			end
+		end
+	end
+end

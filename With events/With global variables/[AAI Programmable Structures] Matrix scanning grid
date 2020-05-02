@@ -1,0 +1,14 @@
+on_nth_tick[1] = function(event)
+	var[1] = var[1] or 0
+	var[2] = var[2] or 0
+	var[1] = var[1] + 1
+	if var[1] >= mScanner_distance_X then
+		var[1] = 0
+		var[2] = var[2] + 1
+	end
+	if var[2] >= mScanner_distance_Y then
+		var[2] = 0
+	end
+	output["signal-x-tile"] = var[1] + mScanner_scanner_X - (mScanner_distance_X / 2)
+	output["signal-y-tile"] = var[2] + mScanner_scanner_Y - (mScanner_distance_Y / 2)
+end

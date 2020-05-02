@@ -1,0 +1,18 @@
+on_nth_tick[10] = function(event)
+	var[1] = rednet["signal-count"] or 0
+	var[2] = var[2] or 0
+	var[3] = var[3] or 1
+	if var[1] == 0 then
+		var[2] = var[2] + 1
+		output = {}
+	end
+	if var[2] > #zone_colour then
+		var[2] = 1
+		var[3] = var[3] + 1
+	end
+	if var[3] > #zone_patterns then
+		var[3]  = 1
+	end
+	local zone = "zone-"..zone_patterns[var[3]].."-"..zone_colour[var[2]]
+	output[zone] = 1
+end

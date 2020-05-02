@@ -1,0 +1,25 @@
+--Matrix scanning area (creates a scanning grid)
+on_nth_tick[1] = function(event)
+--Distance
+	local distance_X = 10
+	local distance_Y = 10
+--Scanner's coordinates (absolute)
+	local scanner_X = 10
+	local scanner_Y = 10
+	if var[1] == nil then
+		var[1] = 0
+	end
+	if var[2] == nil then
+		var[2] = 0
+	end
+	var[1] = var[1] + 1
+	if var[1] >= distance_X then
+		var[1] = 0
+		var[2] = var[2] + 1
+	end
+	if var[2] >= distance_Y then
+		var[2] = 0
+	end
+	output["signal-x-tile"] = var[1] + scanner_X - (distance_X / 2)
+	output["signal-y-tile"] = var[2] + scanner_Y - (distance_Y / 2)
+end

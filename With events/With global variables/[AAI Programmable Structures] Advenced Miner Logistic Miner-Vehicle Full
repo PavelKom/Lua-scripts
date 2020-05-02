@@ -1,0 +1,36 @@
+on_nth_tick[6] = function()
+--var[1] - index
+	var[1] = var[1] or 1
+	if Miners.vehicle[var[1]] == nil then
+		var[1] = 1
+	elseif output["signal-id"] ~= Miners.vehicle[var[1]].iIndex then
+	output = {}
+	output["signal-id"] = Miners.vehicle[var[1]].iIndex
+	elseif rednet["signal-id"] ~= nil then
+		var[2] = rednet["signal-inventory-slot"] or 0
+		if var[2] < 10 then
+			local isExist = false
+			for i, miner in ipairs(targetMiner) do
+				if Miners.vehicle[var[1]] == miner then
+					isExist = true
+					break
+				end
+			end
+			if not isExist then
+				table.insert(targetMiner, Miners.vehicle[var[1]])
+			end
+		else
+			for i, miner in ipairs(targetMiner) do
+				if Miners.vehicle[var[1]] == miner then
+					table.remove(targetMiner, i)
+					break
+				end
+			end
+		end
+		var[1] = var[1] + 1
+	end
+	if var[1] > #Miners.vehicle then
+		var[1] = 1
+	end
+	output["signal-F"] = #targetMiner
+end

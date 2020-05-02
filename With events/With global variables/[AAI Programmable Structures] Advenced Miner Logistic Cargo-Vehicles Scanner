@@ -1,0 +1,23 @@
+on_nth_tick[6] = function()
+--var[1] - index by type
+--var[2] - type
+	var[1] = var[1] or 1
+	var[2] = var[2] or 1
+	if Cargos == nil then
+		game.print("Cargos not initialized")
+	elseif output[advMinLog_CargoType[var[2]]] ~= var[1] then
+		output = {}
+		output[advMinLog_CargoType[var[2]]] = var[1]
+	elseif rednet[advMinLog_CargoType[var[2]]] == nil then
+		var[2] = var[2] + 1
+		var[1] = 1
+		if var[2] > #advMinLog_CargoType then
+			var[2] = 1
+		end
+	else
+		var[3] = rednet["signal-id"] or 0
+		Cargos:add(var[3],advMinLog_CargoType[var[2]],var[1])
+		var[1] = var[1] + 1
+	end
+	output["signal-A"] = #Cargos.vehicle or 0
+end

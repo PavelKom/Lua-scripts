@@ -1,0 +1,241 @@
+on_tick = function()
+	--For matrix scanner
+	if mScanner_distance_X == nil then
+		mScanner_distance_X = 100
+	end
+	if mScanner_distance_Y == nil then
+		mScanner_distance_Y = 100
+	end
+	if mScanner_scanner_X == nil then
+		mScanner_scanner_X = 0
+	end
+	if mScanner_scanner_Y == nil then
+		mScanner_scanner_Y = 0
+	end
+	--UPDATING VARS
+	--For resource checker
+	if ores == nil then
+		ores = {
+		   "coal",
+		   "stone",
+		   "iron-ore",
+		   "copper-ore",
+		   "uranium-ore",
+		   "thorium-rubble",
+		   "uranium-rubble",
+		   "gem-ore",
+		   "ruby-ore",
+		   "sapphire-ore",
+		   "bauxite-ore",
+		   "cobalt-ore",
+		   "gold-ore",
+		   "lead-ore",
+		   "nickel-ore",
+		   "quartz",
+		   "rutile-ore",
+		   "silver-ore",
+		   "thorium-ore",
+		   "tin-ore",
+		   "tungsten-ore",
+		   "zinc-ore",
+		   "emerald-ore",
+		   "amethyst-ore",
+		   "topaz-ore",
+		   "diamond-ore"
+		}
+	end
+	if zone_ore_default == nil then
+		zone_ore_default = "zone-circle-yellow"
+	end
+	--For enemy building checker
+	if enemy_building == nil then
+		enemy_building = {"signal-enemy-unis-spawner", "signal-enemy-turret"}
+	end
+	if zone_enemy_default == nil then
+		zone_enemy_default = "zone-x-red"
+	end
+	--For zone cleaner
+	if zone_colour == nil then
+		zone_colour = {
+			"black",
+			"green",
+			"teal",
+			"cyan",
+			"blue",
+			"purple",
+			"magenta",
+			"red",
+			"orange",
+			"yellow",
+			"olive",
+			"white"
+		}
+	end
+	if zone_patterns == nil then
+		zone_patterns = {
+			"diagonal-left",
+			"diagonal-right",
+			"horizontal",
+			"vertical",
+			"box",
+			"plus",
+			"x",
+			"circle",
+			"disc",
+			"arrow-n",
+			"arrow-e",
+			"arrow-s",
+			"arrow-w",
+			"arrow-ne",
+			"arrow-se",
+			"arrow-sw",
+			"arrow-nw"
+		}
+	end
+	--For gem sorter and polisher
+	if gems_items == nil then
+		gems_items = {
+			"gem-ore",
+			"ruby-ore", "sapphire-ore", "emerald-ore", "amethyst-ore", "topaz-ore", "diamond-ore",
+			"ruby-3", "sapphire-3", "emerald-3", "amethyst-3", "topaz-3", "diamond-3",
+			"ruby-4", "sapphire-4", "emerald-4", "amethyst-4", "topaz-4", "diamond-4"
+		}
+	end
+	if gems_recipes == nil then
+		gems_recipes = {
+			"sort-gem-ore",
+			"bob-ruby-3", "bob-sapphire-3", "bob-emerald-3", "bob-amethyst-3", "bob-topaz-3", "bob-diamond-3",
+			"bob-ruby-4", "bob-sapphire-4", "bob-emerald-4", "bob-amethyst-4", "bob-topaz-4", "bob-diamond-4",
+			"bob-ruby-5", "bob-sapphire-5", "bob-emerald-5", "bob-amethyst-5", "bob-topaz-5", "bob-diamond-5"
+		}
+	end
+	--For matrix construction
+	if mConstruction_distance_X == nil then
+		mConstruction_distance_X = 10
+	end
+	if mConstruction_distance_Y == nil then
+		mConstruction_distance_Y = 10
+	end
+	if mConstruction_Scale_X == nil then
+		mConstruction_Scale_X = 1
+	end
+	if mConstruction_Scale_Y == nil then
+		mConstruction_Scale_Y = 1
+	end
+	--For advenced cell checker
+	if advChecker_zone == nil then
+		advChecker_zone = {
+			["coal"] ="zone-diagonal-left-black",
+			["stone"] ="zone-diagonal-left-olive",
+			["iron-ore"] ="zone-diagonal-left-cyan",
+			["copper-ore"] ="zone-diagonal-left-orange",
+			["uranium-ore"] ="zone-diagonal-left-green",
+			
+			["thorium-rubble"] ="zone-diagonal-right-olive",
+			["uranium-rubble"] ="zone-diagonal-right-olive",
+			
+			["bauxite-ore"] ="zone-horizontal-orange",
+			["cobalt-ore"] ="zone-horizontal-blue",
+			["gold-ore"] ="zone-horizontal-yellow",
+			["lead-ore"] ="zone-horizontal-black",
+			["nickel-ore"] ="zone-horizontal-cyan",
+			["quartz"] ="zone-horizontal-white",
+			["rutile-ore"] ="zone-horizontal-magenta",
+			["silver-ore"] ="zone-vertical-white",
+			["thorium-ore"] ="zone-horizontal-green",
+			["tin-ore"] ="zone-horizontal-teal",
+			["tungsten-ore"] ="zone-vertical-orange",
+			["zinc-ore"] ="zone-vertical-cyan",
+			
+			["gem-ore"] ="zone-diagonal-right-black",
+			["ruby-ore"] ="zone-diagonal-right-red",
+			["sapphire-ore"] ="zone-diagonal-right-blue",
+			["emerald-ore"] ="zone-diagonal-right-green",
+			["amethyst-ore"] ="zone-diagonal-right-magenta",
+			["topaz-ore"] ="zone-diagonal-right-orange",
+			["diamond-ore"] ="zone-diagonal-right-white",
+		}
+	end
+	--For advenced mining logistic
+	if depot_X == nil then
+		depot_X = 0
+	end
+	if depot_Y == nil then
+		depot_Y = 0
+	end
+	if advMinLog_CargoType == nil then
+		advMinLog_CargoType = {
+			"vehicle-hauler-_-signal",
+			"cargo-plane-_-signal"
+		}
+	end
+	if advMinLog_MinerType == nil then
+		advMinLog_MinerType = {
+			"vehicle-miner-_-signal",
+			"vehicle-miner-mk2-_-signal",
+			"vehicle-miner-mk3-_-signal",
+			"vehicle-miner-mk4-_-signal",
+			"vehicle-miner-mk5-_-signal"
+		}
+	end
+	--Helpful function
+	if dynamic_array == nil then
+		dynamic_array = function(dimension)
+			game.print("Creating multidimentional array")
+			local metatable = {}
+			for i=1, dimension do
+				metatable[i] = {__index = function(tbl, key)
+                    if i < dimension then
+                        tbl[key] = setmetatable({}, metatable[i+1])
+                        return tbl[key]
+                    end
+				end
+                }
+			end
+			return setmetatable({}, metatable[1]);
+		end
+	end
+	--game.print("Initialisaton")
+	delay = 600
+end
+
+on_console_chat = function(event)
+	if event.message == "reset matrix scanner" or event.message == "reset 1" then
+		game.print("Resetting matrix scanner data")
+		mScanner_distance_X = nil
+		mScanner_distance_Y = nil
+		mScanner_scanner_X = nil
+		mScanner_scanner_Y = nil
+	elseif event.message == "reset ores" or event.message == "reset 2" then
+		game.print("Resetting ores data")
+		ores = nil
+		zone_ore_default = nil
+	elseif event.message == "reset enemy" or event.message == "reset 3" then
+		game.print("Resetting enemy data")
+		enemy_building = nil
+		zone_enemy_default = nil
+	elseif event.message == "reset zone" or event.message == "reset 4" then
+		game.print("Resetting zone data")
+		zone_colour = nil
+		zone_patterns = nil
+	elseif event.message == "reset gems" or event.message == "reset 5" then
+		game.print("Resetting gems data")
+		gems_items = nil
+		gems_recipes = nil
+	elseif event.message == "reset matrix construction" or event.message == "reset 6" then
+		game.print("Resetting matrix construction data")
+		mConstruction_distance_X = nil
+		mConstruction_distance_Y = nil
+		mConstruction_Scale_X = nil
+		mConstruction_Scale_Y = nil
+	elseif event.message == "reset advenced cell checker" or event.message == "reset 7" then
+		game.print("Resetting advenced cell checker data")
+		advChecker_zone = nil
+	elseif event.message == "reset advenced mining logistic" or event.message == "reset 8" then
+		game.print("Resetting advenced mining logistic data")
+		depot_X = nil
+		depot_Y = nil
+		advMinLog_CargoType = nil
+		advMinLog_MinerType = nil
+	end
+end

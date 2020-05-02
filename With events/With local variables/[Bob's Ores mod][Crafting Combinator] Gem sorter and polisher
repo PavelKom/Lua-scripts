@@ -3,7 +3,7 @@
 --Clear output
 output = {}
 --Items
-local gems = {
+local gems_items = {
 	"gem-ore",
 	"ruby-ore", "sapphire-ore", "emerald-ore", "amethyst-ore", "topaz-ore", "diamond-ore",
 	"ruby-3", "sapphire-3", "emerald-3", "amethyst-3", "topaz-3", "diamond-3",
@@ -15,12 +15,12 @@ local gems_recipes = {
 	"bob-ruby-3", "bob-sapphire-3", "bob-emerald-3", "bob-amethyst-3", "bob-topaz-3", "bob-diamond-3",
 	"bob-ruby-4", "bob-sapphire-4", "bob-emerald-4", "bob-amethyst-4", "bob-topaz-4", "bob-diamond-4",
 	"bob-ruby-5", "bob-sapphire-5", "bob-emerald-5", "bob-amethyst-5", "bob-topaz-5", "bob-diamond-5"}
---Use BIG Chests for normal work (Warehouse, merged chests, etc.)
+--Use BIG Chests for normal work (Warehouse, merging chests, etc.)
 --Turn OFF "Discard items" setting on crafting combinator
 on_nth_tick[60] = function(event)
 	output = {}
-	for i = 1, #gems do
-		if rednet[gems[i]] ~= nil then
+	for i = 1, #gems_items do
+		if rednet[gems_items[i]] ~= nil then
 			output[gems_recipes[i]] = 1
 			break
 		end
