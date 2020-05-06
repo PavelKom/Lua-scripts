@@ -21,11 +21,15 @@ on_tick = function()
 		   "iron-ore",
 		   "copper-ore",
 		   "uranium-ore",
-		   "thorium-rubble",
-		   "uranium-rubble",
+		   
 		   "gem-ore",
 		   "ruby-ore",
 		   "sapphire-ore",
+		   "emerald-ore",
+		   "amethyst-ore",
+		   "topaz-ore",
+		   "diamond-ore",
+		   
 		   "bauxite-ore",
 		   "cobalt-ore",
 		   "gold-ore",
@@ -37,11 +41,7 @@ on_tick = function()
 		   "thorium-ore",
 		   "tin-ore",
 		   "tungsten-ore",
-		   "zinc-ore",
-		   "emerald-ore",
-		   "amethyst-ore",
-		   "topaz-ore",
-		   "diamond-ore"
+		   "zinc-ore"
 		}
 	end
 	if zone_ore_default == nil then
@@ -125,35 +125,32 @@ on_tick = function()
 	--For advenced cell checker
 	if advChecker_zone == nil then
 		advChecker_zone = {
-			["coal"] ="zone-diagonal-left-black",
-			["stone"] ="zone-diagonal-left-olive",
-			["iron-ore"] ="zone-diagonal-left-cyan",
-			["copper-ore"] ="zone-diagonal-left-orange",
-			["uranium-ore"] ="zone-diagonal-left-green",
+			"zone-diagonal-left-black", --coal
+			"zone-diagonal-left-olive", --stone
+			"zone-diagonal-left-cyan", --iron-ore
+			"zone-diagonal-left-orange", --copper-ore
+			"zone-diagonal-left-green", --uranium-ore
 			
-			["thorium-rubble"] ="zone-diagonal-right-olive",
-			["uranium-rubble"] ="zone-diagonal-right-olive",
+			"zone-diagonal-right-black", --gem-ore
+			"zone-diagonal-right-red", --ruby-ore
+			"zone-diagonal-right-blue", --sapphire-ore
+			"zone-diagonal-right-green", --emerald-ore
+			"zone-diagonal-right-magenta", --amethyst-ore
+			"zone-diagonal-right-orange", --topaz-ore
+			"zone-diagonal-right-white", --diamond-ore
 			
-			["bauxite-ore"] ="zone-horizontal-orange",
-			["cobalt-ore"] ="zone-horizontal-blue",
-			["gold-ore"] ="zone-horizontal-yellow",
-			["lead-ore"] ="zone-horizontal-black",
-			["nickel-ore"] ="zone-horizontal-cyan",
-			["quartz"] ="zone-horizontal-white",
-			["rutile-ore"] ="zone-horizontal-magenta",
-			["silver-ore"] ="zone-vertical-white",
-			["thorium-ore"] ="zone-horizontal-green",
-			["tin-ore"] ="zone-horizontal-teal",
-			["tungsten-ore"] ="zone-vertical-orange",
-			["zinc-ore"] ="zone-vertical-cyan",
-			
-			["gem-ore"] ="zone-diagonal-right-black",
-			["ruby-ore"] ="zone-diagonal-right-red",
-			["sapphire-ore"] ="zone-diagonal-right-blue",
-			["emerald-ore"] ="zone-diagonal-right-green",
-			["amethyst-ore"] ="zone-diagonal-right-magenta",
-			["topaz-ore"] ="zone-diagonal-right-orange",
-			["diamond-ore"] ="zone-diagonal-right-white",
+			"zone-horizontal-orange", --bauxite-ore
+			"zone-horizontal-blue", --cobalt-ore
+			"zone-horizontal-yellow", --gold-ore
+			"zone-horizontal-black", --lead-ore
+			"zone-horizontal-cyan", --nickel-ore
+			"zone-horizontal-white", --quartz
+			"zone-horizontal-magenta", --rutile-ore
+			"zone-vertical-white", --silver-ore
+			"zone-horizontal-green", --thorium-ore
+			"zone-horizontal-teal", --tin-ore
+			"zone-vertical-orange", --tungsten-ore
+			"zone-vertical-cyan" --zinc-ore
 		}
 	end
 	--For advenced mining logistic
