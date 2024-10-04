@@ -1,18 +1,21 @@
 --[[
 	Player Detector Utility library by PavelKom.
-	Version: 0.1
-	Wrapped Environment Detector
+	Version: 0.9
+	Wrapped Player Detector
 	https://advancedperipherals.netlify.app/peripherals/player_detector/
+	TODO: Add manual
 ]]
+getset = require 'getset_util'
 
-local player_util = {}
-player_util.DEFAULT_PLAYER_DETECTOR = nil
+local this_library = {}
+this_library.DEFAULT_PERIPHERAL = nil
 
-function player_util.waitPlayerClickEvent()
+-- Events
+function this_library.waitPlayerClickEvent()
 	--event, username, device
 	return os.pullEvent("playerClick")
 end
-function player_util.waitPlayerClickEventEx(func)
+function this_library.waitPlayerClickEventEx(func)
 	--[[
 	Create semi-infinite loop for playerClick event listener
 	func - callback function. Must have arguments:
@@ -24,7 +27,7 @@ function player_util.waitPlayerClickEventEx(func)
 		And return true. Else stop loop 
 	]]
 	if func == nil then
-		error('player_util.waitChatEventEx must have callback function')
+		error('this_library.waitChatEventEx must have callback function')
 	end
 	local loop = true
 	while loop do
@@ -32,11 +35,11 @@ function player_util.waitPlayerClickEventEx(func)
 	end
 end
 
-function player_util.waitPlayerJoinvent()
+function this_library.waitPlayerJoinvent()
 	--event, username, dimension
 	return os.pullEvent("playerJoin")
 end
-function player_util.waitPlayerJoinEventEx(func)
+function this_library.waitPlayerJoinEventEx(func)
 	--[[
 	Create semi-infinite loop for playerJoin event listener
 	func - callback function. Must have arguments:
@@ -56,11 +59,11 @@ function player_util.waitPlayerJoinEventEx(func)
 	end
 end
 
-function player_util.waitPlayerLeaveEvent()
+function this_library.waitPlayerLeaveEvent()
 	--event, username, dimension
 	return os.pullEvent("playerLeave")
 end
-function player_util.waitPlayerLeaveEventEx(func)
+function this_library.waitPlayerLeaveEventEx(func)
 	--[[
 	Create semi-infinite loop for playerLeave event listener
 	func - callback function. Must have arguments:
@@ -80,11 +83,11 @@ function player_util.waitPlayerLeaveEventEx(func)
 	end
 end
 
-function player_util.waitPlayerChangedDimensionEvent()
+function this_library.waitPlayerChangedDimensionEvent()
 	--event, username, fromDim, toDim
 	return os.pullEvent("playerChangedDimension")
 end
-function player_util.waitPlayerChangedDimensionEventEx(func)
+function this_library.waitPlayerChangedDimensionEventEx(func)
 	--[[
 	Create semi-infinite loop for playerChangedDimension event listener
 	func - callback function. Must have arguments:
@@ -105,16 +108,21 @@ function player_util.waitPlayerChangedDimensionEventEx(func)
 	end
 end
 
-
-function player_util:EnvironmentDetector(name)
+-- Peripheral
+function this_library:PlayerDetector(name)
 	name = name or 'playerDetector'
-	local ret = {object = peripherals.find(name), _nil = function() end}
+	local ret = {object = peripheral.find(name), _nil = function() end}
 	if ret.object == nil then error("Can't connect to Player Detector '"..name.."'") end
-	ret.name = name
+	ret.name = peripheral.getName(ret.object)
+	ret.type = peripheral.getType(ret.object)
+	ret.__getter = {}
 	
-	ret.playerPos = function(username) return ret.object.getPlayerPos(username) end
-	ret.player = ret.playerPos
-	ret._online_get = function() return ret.object.getOnlinePlayers() end
+	ret.getPlayerPos = function(username) return ret.object.getPlayerPos(username) end
+	ret.playerPos = ret.getPlayerPos
+	ret.player = ret.getPlayerPos
+	ret.__getter.online = function() return ret.object.getOnlinePlayers() end
+	ret.getOnlinePlayers = ret.__getter.online
+	ret.getOnline = ret.__getter.online
 	ret.inRange = function(range) return ret.object.getPlayersInRange(range) end
 	
 	ret.inCords = function(posOne, posTwo) return ret.object.getPlayersInCoords(posOne, posTwo) end
@@ -148,121 +156,71 @@ function player_util:EnvironmentDetector(name)
 	end
 	ret.isInCubic2 = function(w, h, d, username) return ret.isInCubic({w=w, h=h, d=d}, username) end
 	
-	ret.__public_keys = {name=true,
-		playerPos=true, player=true,
-	    online=true,
-	    inRange=true,
-	    inCords=true, inCords2=true,
-	    inCubic=true, inCubic2=true,
-	    isInRange=true,
-	    isInCords=true, isInCords2=true,
-	    isInCubic=true, isInCubic2=true,
-		}
-	
 	setmetatable(ret, {
-		-- getter
-		__index = function(self, method)
-			if string.sub(tostring(method),1,1) == "_" then return self._nil end
-			return self["_"..tostring(method).."_get"]()
-		end,
-		-- setter
-		__newindex = function(self, method, value)
-			if string.sub(tostring(method),1,1) == "_" then return self._nil end
-			return self["_"..tostring(method).."_set"](value)
-		end,
+		__index = getset.GETTER, __newindex = getset.SETTER, 
+		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Energy Detector '%s' Rate: %i Limit: %i", self.name, self.rate, self.limit)
+			return string.format("Player Detector '%s'", self.name, self.rate, self.limit)
 		end,
-		__pairs = function(self)
-			local key, value = next(self)
-			local cached_kv = nil
-			cached_kv = key
-			return function()
-				key, value = next(self, cached_kv)
-				local _key = nil
-				while key and not self.__public_keys[key] do
-					if type(key) == 'string' and (isGetter(key) or isSetter(key)) then
-						_key = key
-						key = cutGetSet(key)
-						value = self[key]
-					else
-						key, value = next(self, _key or key)
-						_key = nil
-					end
-				end
-				cached_kv = _key or key
-				return key, value
-			end
-		end
+		__eq = getset.EQ_PERIPHERAL
 	})
 	
 	return ret
 end
-function isGetter(key)
-	local a = string.find(key,"_")
-	return string.match(key, "_[a-zA-Z0-9_]+_get") ~= nil
-end
-function isSetter(key)
-	local a = string.find(key,"_")
-	return string.match(key, "_[a-zA-Z0-9_]+_set") ~= nil
-end
-function cutGetSet(key)
-	return string.sub(key, 2, #key-4)
-end
 
 function testDefaultPeripheral()
-	if player_util.DEFAULT_PLAYER_DETECTOR == nil then
-		player_util.DEFAULT_PLAYER_DETECTOR = player_util:EnvironmentDetector()
+	if this_library.DEFAULT_PERIPHERAL == nil then
+		this_library.DEFAULT_PERIPHERAL = this_library:PlayerDetector()
 	end
 end
 
-function player_util.getPlayerPos(username)
+function this_library.getPlayerPos(username)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.playerPos(username)
+	return this_library.DEFAULT_PERIPHERAL.playerPos(username)
 end
-function player_util.online()
+function this_library.online()
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.
+	return this_library.DEFAULT_PERIPHERAL.online
 end
-function player_util.inRange(range)
+function this_library.inRange(range)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.inRange(range)
+	return this_library.DEFAULT_PERIPHERAL.inRange(range)
 end
-function player_util.inCords(posOne, posTwo)
+function this_library.inCords(posOne, posTwo)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.inCords(posOne, posTwo)
+	return this_library.DEFAULT_PERIPHERAL.inCords(posOne, posTwo)
 end
-function player_util.inCords2(x1,y1,z1, x2,y2,z2)
+function this_library.inCords2(x1,y1,z1, x2,y2,z2)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.inCords2(x1,y1,z1, x2,y2,z2)
+	return this_library.DEFAULT_PERIPHERAL.inCords2(x1,y1,z1, x2,y2,z2)
 end
-function player_util.inCubic(whd)
+function this_library.inCubic(whd)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.inCubic(whd)
+	return this_library.DEFAULT_PERIPHERAL.inCubic(whd)
 end
-function player_util.inCubic2(w, h, d)
+function this_library.inCubic2(w, h, d)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.inCubic2(w, h, d)
+	return this_library.DEFAULT_PERIPHERAL.inCubic2(w, h, d)
 end
-function player_util.isInRange(range, username)
+function this_library.isInRange(range, username)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.isInRange(range, username)
+	return this_library.DEFAULT_PERIPHERAL.isInRange(range, username)
 end
-function player_util.isInCords(posOne, posTwo, username)
+function this_library.isInCords(posOne, posTwo, username)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.isInCords(posOne, posTwo, username)
+	return this_library.DEFAULT_PERIPHERAL.isInCords(posOne, posTwo, username)
 end
-function player_util.isInCords2(x1,y1,z1, x2,y2,z2, username)
+function this_library.isInCords2(x1,y1,z1, x2,y2,z2, username)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.isInCords2(x1,y1,z1, x2,y2,z2, username)
+	return this_library.DEFAULT_PERIPHERAL.isInCords2(x1,y1,z1, x2,y2,z2, username)
 end
-function player_util.isInCubic(whd, username)
+function this_library.isInCubic(whd, username)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.isInCubic(whd, username)
+	return this_library.DEFAULT_PERIPHERAL.isInCubic(whd, username)
 end
-function player_util.isInCubic2(w, h, d, username)
+function this_library.isInCubic2(w, h, d, username)
 	testDefaultPeripheral()
-	return player_util.DEFAULT_PLAYER_DETECTOR.isInCubic2(w, h, d, username)
+	return this_library.DEFAULT_PERIPHERAL.isInCubic2(w, h, d, username)
 end
 
-return player_util
+return this_library
