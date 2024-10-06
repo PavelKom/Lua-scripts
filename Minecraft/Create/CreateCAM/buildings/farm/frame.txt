@@ -1,0 +1,16 @@
+;Рамка фермы, заполните строительный модуль стройматериалами, да побольше
+; 1 ярус
+;E Y49 M46:3 Y-49 M-36:-3 X-10 Z4 
+; перегородки
+;D Y52 Z-4 E Z4 D X46 Z-4 E Z4 D Y-52 Z-4 E Z4 D X-46
+; Рамка фермы, не забудьте добавить побольше стройматериалов в шпиндель
+D U R V255
+; Рассчет высоты спуска: 4 * (кол-во слоёв, не считая последнего) + 1
+Z-21
+F=buildings/farm/layer
+F=buildings/farm/layer
+F=buildings/farm/layer
+F=buildings/farm/layer
+F=buildings/farm/layer
+F=buildings/farm/layer_last
+U

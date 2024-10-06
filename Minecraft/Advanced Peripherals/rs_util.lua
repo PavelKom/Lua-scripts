@@ -8,15 +8,7 @@
 getset = require 'getset_util'
 
 local this_library = {}
--- Relative and cardinal directions
-this_library.SIDES = {'right','left','front','back','top','bottom','north','south','east','west','up','down',}
--- add .RIGHT, .NORTH, ... and .SIDES.RIGHT .SIDES.NORTH, ...
-for k,v in ipairs(this_library.SIDES) do
-	this_library[string.upper(v)] = v
-	this_library.SIDES[string.upper(v)] = v
-	--this_library.SIDES[k] = nil
-end
-setmetatable(this_library.SIDES, {__index = getset.GETTER_TO_UPPER(this_library.SIDES.UP)})
+this_library.SIDES = getset.SIDES
 this_library.DEFAULT_PERIPHERAL = nil
 this_library.DEFAULT_COUNT = 1000
 this_library.DEFAULT_BATCH = 1
@@ -24,7 +16,7 @@ this_library.DEFAULT_BATCH = 1
 this_library.OP = {
 	'LT', 'LE', 'EQ', 'NE', 'GE', 'GT', 
 }
-for k,v in pairs(this_library.OP)
+for k,v in pairs(this_library.OP) do
 	this_library.OP[v] = v
 	this_library.OP[k] = nil
 end
@@ -42,15 +34,19 @@ setmetatable(OP_LAMBDA, {__index = getset.GETTER_TO_UPPER(OP_LAMBDA.LT)})
 
 -- Peripheral
 function this_library:RSBridge(name)
-	name = name or 'rsBridge'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to RS Bridge '"..name.."'") end
+	local def_type = 'rsBridge'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to RS Bridge '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.tasks = {}
-	ret.addTask = function(item, count, fingerprint, nbt, batch, isFluid, triggers)
-		ret.tasks[#ret.tasks+1] = this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, triggers)
+	ret.addTaskRaw = function(item, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
+		ret.tasks[#ret.tasks+1] = this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
+	end
+	ret.addTask = function(task)
+		ret.tasks[#ret.tasks+1] = task
 	end
 	ret.eraseTask = function(item)
 		local i = 1
@@ -79,9 +75,9 @@ function this_library:RSBridge(name)
 	
 	ret.__getter = {
 		craftableItems = function() return ret.object.listCraftableItems() end,
-		craftableFluids = function() return ret.object.listCraftableFluid() end,
+		craftableFluids = function() return ret.object.listCraftableFluids() end,
 		items = function() return ret.object.listItems() end,
-		fluids = function() return ret.object.listFluid() end,
+		fluids = function() return ret.object.listFluids() end,
 		energy = function() return ret.object.getEnergyStorage() end,
 		maxEnergy = function() return ret.object.getMaxEnergyStorage() end,
 		usageEnergy = function() return ret.object.getEnergyUsage() end,
@@ -153,12 +149,13 @@ function this_library:RSBridge(name)
 	ret.pattern2 = function(name, nbt) return ret.object.getPattern({name=name, nbt=nbt}) end
 	ret.pattern3 = function(fingerprint) return ret.object.getPattern({fingerprint=fingerprint}) end
 	
+	ret.__setter = {}
+	
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			rel = 
-			return string.format("RS Bridge '%s'", self.name, tostring(rel))
+			return string.format("RS Bridge '%s'", self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
@@ -167,14 +164,14 @@ function this_library:RSBridge(name)
 end
 
 -- Create Tasks
-function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, triggers)
+function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
 	if item == nil and fingerprint == nil then error("Can't create task, item not specific") end
 	local ret = {
 		item=item, fingerprint=fingerprint,
 		count=count or this_library.DEFAULT_COUNT,
 		nbt=nbt, isFluid=isFluid,
 		batch=batch or this_library.DEFAULT_BATCH,
-		triggers=triggers or this_library:Triggers(item, count, nbt)
+		triggers=triggers or this_library:Triggers(item, count, nbt, _, isOR)
 	}
 	ret.test = function(interface, isOR)
 		return ret.triggers.test(interface, isOR)
@@ -218,8 +215,8 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 end
 
 -- Trigger list
-function this_library:Triggers(item, fingerprint, count, nbt, trigger_arr)
-	local ret = {__trgs={}}
+function this_library:Triggers(item, fingerprint, count, nbt, trigger_arr, isOR)
+	local ret = {__trgs={}, isOR=isOR}
 	if item ~= nil or fingerprint ~= nil then
 		ret.__trgs[#ret.__trgs+1] = this_library:Trigger(item, fingerprint, count, nbt)
 	end
@@ -251,6 +248,7 @@ function this_library:Triggers(item, fingerprint, count, nbt, trigger_arr)
 		end
 	end
 	ret.test = function(interface, isOR)
+		isOR = isOR or ret.isOR
 		if interface == nil then return false end
 		for _, t in pairs(ret.__trgs) do
 			test = t.test(interface)
@@ -275,10 +273,10 @@ function this_library:Trigger(item, fingerprint, count, nbt, operator)
 		if item == nil or item.count == nil then
 			if ret.count > 0 and (ret.operator == this_library.OP.LT or 
 				ret.operator == this_library.OP.LE or 
-				ret.operator == this_library.OP.NE)
+				ret.operator == this_library.OP.NE) then
 				return true
 			elseif ret.count == 0 and (ret.operator == this_library.OP.EQ or 
-				ret.operator == this_library.OP.GE)
+				ret.operator == this_library.OP.GE) then
 				return true
 			else return false end
 		else
@@ -305,4 +303,4 @@ end
 
 
 
-
+return this_library

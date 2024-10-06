@@ -1,0 +1,5 @@
+;7x7x4 pyramid
+P7x7x4\tpyramid
+G91 V255 E
+M6:6 X-1 Y-1 Z1 M-4:-4 X1 Y1 Z1
+F=patterns/pyramid/3

@@ -1,0 +1,4 @@
+;3x3x2 pyramid
+P3x3x2\tpyramid
+G91 V255 E
+M2:2 Y-1 X-1 Z1 D

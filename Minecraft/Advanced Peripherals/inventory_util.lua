@@ -5,32 +5,21 @@
 	https://advancedperipherals.netlify.app/peripherals/inventory_manager/
 	ToDo: Add manual
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
--- Sides and cardinal directions
-this_library.SIDES = {'right''left','front','back','top','bottom',}
-this_library.CARDINAL = {'north','south','east','west','up','down',}
-this_library.SLOTS = {BOOTS=100, LEGGINGS=101, CHESTPLATE=102, HELMET=103}
-
--- add .RIGHT, .NORTH, ... and .SIDES.RIGHT .CARDINAL.NORTH, ...
-for k,v in ipairs(this_library.SIDES) do
-	this_library[string.upper(v)] = v
-	this_library.SIDES[string.upper(v)] = v
-end
-for k,v in ipairs(this_library.CARDINAL) do
-	this_library[string.upper(v)] = v
-	this_library.CARDINAL[string.upper(v)] = v
-end
+this_library.SIDES = getset.SIDES
 
 this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:InventoryManager(name)
-	name = name or 'inventoryManager'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to Inventory Manager '"..name.."'") end
+	local def_type = 'inventoryManager'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to Inventory Manager '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__getter = {
 		armor = function() return ret.object.getArmor() end,
@@ -42,12 +31,13 @@ function this_library:InventoryManager(name)
 		space = function() return ret.object.isSpaceAvailable() end,
 		empty = function() return ret.object.getEmptySpace() end
 	}
+	ret.__setter = {}
 	
-	ret.addItemToPlayer = function(direction, item) return ret.object.addItemToPlayer(direction, item) end
+	ret.addItemToPlayer = function(direction, count, toSlot, item) return ret.object.addItemToPlayer(direction, count, toSlot, item) end
 	ret.addItem = ret.addItemToPlayer
 	ret.add = ret.addItemToPlayer
 	
-	ret.removeItemFromPlayer = function(direction, item) return ret.object.removeItemFromPlayer(direction, item) end
+	ret.removeItemFromPlayer = function(direction, count, toSlot, item) return ret.object.removeItemFromPlayer(direction, count, toSlot, item) end
 	ret.removeItem = ret.removeItemFromPlayer
 	ret.remove = ret.removeItemFromPlayer
 	
@@ -55,7 +45,7 @@ function this_library:InventoryManager(name)
 		if slot == nil then
 			return ret.object.isPlayerEquipped()
 		else
-			return ret.object.isWearing(slot)
+			return ret.object.isWearing(slot) -- Always return false ???
 		end
 	end
 	ret.__getter.offHand = ret.__getter.hand2

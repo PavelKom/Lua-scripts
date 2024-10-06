@@ -12,18 +12,16 @@ this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:NBTStorage(name)
-	name = name or 'nbtStorage'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to Inventory Manager '"..name.."'") end
+	local def_type = 'nbtStorage'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to NBT Storage '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
-	ret.__getter = {}
-	ret.read = function() return ret.object.read() end
-	ret.__getter.data = ret.read
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
+	ret.read = function() return ret.object.read() end
 	ret.writeTable = function(nbt) return ret.object.writeTable(nbt) end
 	ret.write = ret.writeTable
-	
 	ret.writeJson = function(json)
 		if type(json) == 'table' then
 			json = textutils.serialiseJSON(json)
@@ -31,6 +29,14 @@ function this_library:NBTStorage(name)
 		return ret.object.writeJson(json)
 	end
 	ret.write2 = ret.writeJson
+	
+	ret.__getter = {}
+	ret.__getter.data = ret.read
+	
+	ret.__setter = {}
+	ret.__setter.data = ret.write
+	ret.__setter.jdata = ret.writeJson
+	
 	
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 

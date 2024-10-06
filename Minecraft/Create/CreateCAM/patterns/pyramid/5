@@ -1,0 +1,4 @@
+;5x5x3 pyramid
+P5x5x3\tpyramid
+G91 V255 E
+M4:4 Y-1 X-1 Z1 M-2:-2 X1 Y1 Z1 D

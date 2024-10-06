@@ -12,11 +12,12 @@ this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:BlockReader(name)
-	name = name or 'blockReader'
-	local ret = {object = peripheral.find(name)}
-	if ret.object == nil then error("Can't connect to Block Reader '"..name.."'") end
+	local def_type = 'blockReader'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to Block Reader '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__getter = {
 		block = function() return ret.object.getBlockName() end,
@@ -29,6 +30,7 @@ function this_library:BlockReader(name)
 	ret.getBlockStates = ret.__getter.states
 	ret.isTileEntity = ret.__getter.tile
 	
+	ret.__setter = {}
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,

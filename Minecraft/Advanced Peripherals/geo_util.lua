@@ -5,27 +5,32 @@
 	https://advancedperipherals.netlify.app/peripherals/geo_scanner/
 	TODO: Add manual
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
 this_library.DEFAULT_PERIPHERAL = nil
 
--- Periphearl
+-- Peripheral
 function this_library:GeoScanner(name)
-	name = name or 'geoScanner'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to Geo Scanner '"..name.."'") end
+	local def_type = 'geoScanner'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to Geo Scanner '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__getter = {
 		fuel = function() return ret.object.getFuelLevel() end,
 		maxFuel = function() return ret.object.getMaxFuelLevel() end,
-		cooldown = function() return rt.object.getScanCooldown() end,
-		analyze = function() return rt.object.chunkAnalyze() end,
+		cooldown = function() return ret.object.getScanCooldown() end,
+		analyze = function() return ret.object.chunkAnalyze() end,
+		fuelRate = function() return ret.object.getFuelConsumptionRate() end,
 	}
 	ret.__getter.max = ret.__getter.maxFuel
 	ret.cost = function(radius) return ret.object.cost(radius) end
 	ret.scan = function(radius) return ret.object.scan(radius) end
+	
+	ret.__setter = {fuelRate = function(value) return ret.object.setFuelConsumptionRate(value) end,}
 	
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 

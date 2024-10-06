@@ -3,8 +3,9 @@
 	Version: 0.9
 	Wrapped AR Controller
 	https://advancedperipherals.netlify.app/peripherals/ar_controller/
-	TODO: Add manual
+	Temporary unavaliable (AR Googles is disabled by mod creators)
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
 -- Align
@@ -17,11 +18,12 @@ this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:ARController(name)
-	name = name or 'arController'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to AR Controller '"..name.."'") end
+	local def_type = 'arController'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to AR Controller '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__ids = {}
 	setmetatable(ret.__ids, {
@@ -143,11 +145,12 @@ function this_library:ARController(name)
 		return ret.object.setRelativeMode(enabled, virtualScreenWidth, virtualScreenHeight)
 	end
 	
+	ret.__setter = {}
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
-		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
+		__pairs = getset.PAIRS, __ipairs = getseta.IPAIRS,
 		__tostring = function(self)
-			rel = 
+			local rel = self.isRelative
 			return string.format("AR Controller '%s' RelativeMode: %s", self.name, tostring(rel))
 		end,
 		__eq = getset.EQ_PERIPHERAL

@@ -1,0 +1,11 @@
+;Заполнени землей пахотных слоёв, не забудьте добавить побольше земли или её альтернатив в шпиндель
+D U R X1 Y4 V255
+; Рассчет высоты спуска: 4 * (кол-во слоёв, не считая последнего) + 1
+Z-21
+F=buildings/farm/dirt_layer
+F=buildings/farm/dirt_layer
+F=buildings/farm/dirt_layer
+F=buildings/farm/dirt_layer
+F=buildings/farm/dirt_layer
+F=buildings/farm/dirt_layer_last
+U

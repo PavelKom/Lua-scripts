@@ -5,9 +5,52 @@
 	https://advancedperipherals.netlify.app/peripherals/chat_box/
 	TODO: Add manual
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
 this_library.DEFAULT_PERIPHERAL = nil
+
+this_library.CHATCOLORS = {
+	BLACK = '§0',
+	DARK_BLUE = '§1',
+	DARK_GREEN = '§2',
+	DARK_AQUA = '§3',
+	DARK_RED = '§4',
+	DARK_PURPLE = '§5',
+	GOLD = '§6',
+	GRAY = '§7',
+	DARK_GRAY = '§8',
+	BLUE = '§9',
+	GREEN = '§a',
+	AQUA = '§b',
+	RED = '§c',
+	LIGHT_PURPLE = '§d',
+	YELLOW = '§e',
+	WHITE = '§f',
+	
+	OBFUSCATED = '§k',
+	BOLD = '§l',
+	STRIKETHROUGH = '§m',
+	UNDERLINE = '§n',
+	ITALIC = '§o',
+	RESET = '§r',
+}
+for k, v in pairs(this_library.CHATCOLORS) do
+	if this_library.CHATCOLORS[string.upper(v)] == nil then this_library.CHATCOLORS[string.upper(v)] = v end
+end
+
+this_library.CHATCOLORS.GREY = this_library.CHATCOLORS.GRAY
+this_library.CHATCOLORS.DARK_GREY = this_library.CHATCOLORS.DARK_GRAY
+this_library.CHATCOLORS.GLITCH = this_library.CHATCOLORS.OBFUSCATED
+this_library.CHATCOLORS.UNDER = this_library.CHATCOLORS.UNDERLINE
+this_library.CHATCOLORS.STRIKE = this_library.CHATCOLORS.STRIKETHROUGH
+setmetatable(this_library.CHATCOLORS, {
+	__index = getset.GETTER_TO_UPPER(this_library.CHATCOLORS.RESET)
+})
+
+function this_library.colorText(text, color, effect, resetToDefault)
+	return string.format("%s%s%s%s", color and this_library.CHATCOLORS[color] or '', effect and this_library.CHATCOLORS[effect] or '', text, resetToDefault and this_library.CHATCOLORS.RESET or '')
+end
 
 -- Events
 function this_library.waitChatEvent()
@@ -38,12 +81,15 @@ end
 
 -- Peripheral
 function this_library:ChatBox(name)
-	name = name or 'chatBox'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to ChatBox '"..name.."'") end
+	local def_type = 'chatBox'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to ChatBox '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
+	-- Colors (use Chat Code, like &4&l - Dark Red, Bold)
+	-- https://www.digminecraft.com/lists/color_list_pc.php
 	ret.msg = function(message, username, prefix, brackets, bracketColor, range)
 		if username == nil then
 			return ret.object.sendMessage(message, prefix, brackets, bracketColor, range)
@@ -69,7 +115,7 @@ function this_library:ChatBox(name)
 		end
 		return ret.object.sendFormattedMessageToPlayer(json, username, prefix, brackets, bracketColor, range)
 	end
-	ret.jsmg = ret.fmsg
+	ret.jmsg = ret.fmsg
 	ret.fmessage = ret.fmsg
 	ret.sendFormattedMessage = ret.fmsg
 	ret.jmessage = ret.fmsg
@@ -85,6 +131,8 @@ function this_library:ChatBox(name)
 	end
 	ret.sendFormattedToastToPlayer = ret.ftoast
 	
+	ret.__getter = {}
+	ret.__setter = {}
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,

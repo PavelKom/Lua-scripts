@@ -1,0 +1,5 @@
+;9x9x5 pyramid
+P9x9x5\tpyramid
+G91 V255 E
+M8:8 X-1 Y-1 Z1 M-6:-6 X1 Y1 Z1
+F=patterns/pyramid/5

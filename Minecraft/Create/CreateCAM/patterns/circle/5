@@ -1,0 +1,6 @@
+TCircle\diameter\t5
+G91 D X1 E
+X2 Y1
+X1 X-4 Y1
+X4 Y1 X-4 X1 Y1 X2
+D X-3 Y-4

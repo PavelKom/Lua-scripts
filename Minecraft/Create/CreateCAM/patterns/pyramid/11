@@ -1,0 +1,5 @@
+;11x11x6 pyramid
+P11x11x6\tpyramid
+G91 V255 E
+M10:10 Y-1 X-1 Z1 M-8:-8 X1 Y1 Z1
+F=patterns/pyramid/7

@@ -1,0 +1,6 @@
+G91 D X3 E
+X4 Y1 X2 Y2 X1
+Y4 X-1 Y2 X-2 Y1
+X-4 Y-1 X-2 Y-2 X-1
+Y-4 X1 Y-2 X2 Y-1
+D X-3

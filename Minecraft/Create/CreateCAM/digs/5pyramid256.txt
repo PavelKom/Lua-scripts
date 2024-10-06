@@ -1,0 +1,8 @@
+;9x9x5 pyramid
+D U G91 Z-5 E
+M8:8 X-1 D Y-1 Z1 E
+M-6:-6 X1 D Y1 Z1 E
+M4:4 X-1 D Y-1 Z1 E
+M-2:-2 X1 D Y1 Z1 E
+X1 D
+U

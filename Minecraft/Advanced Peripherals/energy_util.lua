@@ -5,17 +5,19 @@
 	https://advancedperipherals.netlify.app/peripherals/energy_detector/
 	TODO: Add manual
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
 this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:EnergyDetector(name)
-	name = name or 'energyDetector'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to Energy Detector '"..name.."'") end
+	local def_type = 'energyDetector'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to Energy Detector '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__getter = {
 		rate = function() return ret.object.getTransferRate() end,

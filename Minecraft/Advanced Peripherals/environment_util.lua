@@ -5,17 +5,19 @@
 	https://advancedperipherals.netlify.app/peripherals/environment_detector/
 	TODO: Add manual
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
 this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:EnvironmentDetector(name)
-	name = name or 'environmentDetector'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to Environment Detector '"..name.."'") end
+	local def_type = 'environmentDetector'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to Environment Detector '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__getter = {
 		biome = function() return ret.object.getBiome() end,
@@ -36,8 +38,14 @@ function this_library:EnvironmentDetector(name)
 		slimes = function() return ret.object.isSlimeChunk() end,
 		dims = function() return ret.object.listDimensions() end,
 	}
+	ret.__getter.weather = function()
+		if ret.sunny then return {0, 'sunny'}
+		elseif ret.rain then return {1, 'rain'}
+		else return {2, 'thunder'} end
+	end
+	ret.__getter.moon = function() return {ret.moonId, ret.moonName} end
 	ret.__getter.moonPhase = ret.__getter.moonId
-	ret.__getter.rad = ret.__getter._radiation
+	ret.__getter.rad = ret.__getter.radiation
 	ret.__getter.radRaw = ret.__getter.radiationRaw
 	ret.__getter.rad2 = ret.__getter.radiationRaw
 	ret.isRaining = ret.__getter.rain
@@ -49,6 +57,7 @@ function this_library:EnvironmentDetector(name)
 	ret.scanEntities = function(range) return ret.object.scanEntities() end
 	ret.scan = ret.scanEntities
 	
+	ret.__setter = {}
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,

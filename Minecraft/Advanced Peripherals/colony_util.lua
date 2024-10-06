@@ -5,18 +5,19 @@
 	https://advancedperipherals.netlify.app/peripherals/colony_integrator/
 	TODO: Add manual
 ]]
+getset = require 'getset_util'
 
 local this_library = {}
-
 this_library.DEFAULT_PERIPHERAL = nil
 
 -- Peripheral
 function this_library:ColonyIntegrator(name)
-	name = name or 'colonyIntegrator'
-	local ret = {object = peripheral.find(name), _nil = function() end}
-	if ret.object == nil then error("Can't connect to Colony Integrator '"..name.."'") end
+	local def_type = 'colonyIntegrator'
+	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
+	if ret.object == nil then error("Can't connect to Colony Integrator '"..name or def_type.."'") end
 	ret.name = peripheral.getName(ret.object)
 	ret.type = peripheral.getType(ret.object)
+	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.__getter = {
 		citizens = function() return ret.object.getCitizens() end,
@@ -50,6 +51,7 @@ function this_library:ColonyIntegrator(name)
 	ret.builderResources = function(position) return ret.object.getBuilderResources(position) end
 	ret.isWithin = function(position) return ret.object.isWithin(position) end
 	
+	ret.__setter = {}
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
