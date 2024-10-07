@@ -56,7 +56,7 @@ function this_library:ColonyIntegrator(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Redstone Integrator '%s'", self.name, self.block)
+			return string.format("Colony Integrator '%s'", self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
