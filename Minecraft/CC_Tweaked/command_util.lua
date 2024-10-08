@@ -9,19 +9,24 @@
 getset = require 'getset_util'
 local lib = {}
 
-local DEFAULT_PERIPHERAL = nil
-
 local peripheral_type = 'command'
 local peripheral_name = 'Command Block'
 local Peripheral = {}
+Peripheral.__items = {}
 Peripheral.new = function(name)
-	local self = {}
-	self.object = name and peripheral.wrap(name) or peripheral.find(peripheral_type)
-	if self.object == nil then error("Can't connect to "+peripheral_name+" '"..name or peripheral_type.."'") end
-	self.name = peripheral.getName(self.object)
-	self.type = peripheral.getType(self.object)
-	if self.type ~= peripheral_type then error("Invalid peripheral type. Expect '"..peripheral_type.."' Present '"..self.type.."'") end
+	-- Wrap or find peripheral
+	local object = name and peripheral.wrap(name) or peripheral.find(peripheral_type)
+	if object == nil then error("Can't connect to "+peripheral_name+" '"..name or peripheral_type.."'") end
+	-- If it already registered, return 
+	if Peripheral.__items[peripheral.getName(object)] then
+		return Peripheral.__items[peripheral.getName(object)]
+	end
+	-- Test for miss-type
+	_name = peripheral.getName(object)
+	_type = peripheral.getType(object)
+	if _type ~= peripheral_type then error("Invalid peripheral type. Expect '"..peripheral_type.."' Present '"..type.."'") end
 	
+	local self = {object=object, name=_name, type=_type}
 	ret.__getter = {command = function() return self.object.getCommand() end,}
 	self.__setter = {command = function(value) self.object.setCommand(value) end,}
 	self.run =  function() return self.object.runCommand() end
@@ -34,28 +39,32 @@ Peripheral.new = function(name)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
 	return self
+end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil
 end
 lib.CommandBlock=setmetatable(Peripheral,{__call=Peripheral.new})
 
-function testDefPer()
-	if DEFAULT_PERIPHERAL == nil then
-		DEFAULT_PERIPHERAL = Peripheral()
-		if DEFAULT_PERIPHERAL == nil then error("Cant connect to any "..peripheral_name)
+function testDefaultPeripheral()
+	if not Peripheral.default then
+		Peripheral()
 	end
 end
+
 lib.getCmd = function()
 	testDefaultPeripheral()
-	return DEFAULT_PERIPHERAL.command
-	end
+	return Peripheral.default.command
 end
 lib.setCmd = function(value)
 	testDefaultPeripheral()
-	DEFAULT_PERIPHERAL.command = value
+	Peripheral.default.command = value
 end
 lib.run = function(value)
-	testDefaultPeripheral() then
-	DEFAULT_PERIPHERAL.run()
+	testDefaultPeripheral()
+	Peripheral.default.run()
 end
 
 
