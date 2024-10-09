@@ -109,7 +109,7 @@ while true do
 		for _, _player in pairs(players) do
 			inZone = inZone or player == _player
 		end
-		if not inZone then current_visitors[player] = nil
+		if not inZone then current_visitors[player] = nil end
 	end
 	sleep(delay)
 end
