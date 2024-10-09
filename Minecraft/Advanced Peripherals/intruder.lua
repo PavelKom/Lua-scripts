@@ -103,6 +103,14 @@ while true do
 			end
 		end
 	end
+	-- Убираем игроков, которые покинули зону проверки
+	for player, _ in pairs(current_visitors) do
+		local inZone = false
+		for _, _player in pairs(players) do
+			inZone = inZone or player == _player
+		end
+		if not inZone then current_visitors[player] = nil
+	end
 	sleep(delay)
 end
 
