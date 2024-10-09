@@ -11,7 +11,6 @@ local lib = {}
 
 local peripheral_type = 'command'
 local peripheral_name = 'Command Block'
-local Peripheral = {}
 Peripheral.__items = {}
 Peripheral.new = function(name)
 	-- Wrap or find peripheral
