@@ -240,4 +240,165 @@ function this_library.printTable(tbl,ignore_functions, deep)
 	end
 end
 
+
+
+this_library.GETTER2 = function(cls)
+	return function(self, index)
+		if self.__getter and self.__getter[index] then -- internal/class object getter
+			return self.__getter[index]()
+		elseif cls.__getter and cls.__getter[index] then -- external/class getter
+			return cls.__getter[index](self)
+		elseif cls and cls[index] then -- class method
+			return cls[index](self)
+		end
+		error("Can't get value from '"..tostring(cls)..'().'..tostring(index).."'")
+	end
+end
+this_library.SETTER2 = function(cls)
+	return function(self, index, value)
+		if not self.__setter or not self.__setter[index] then
+			return self.__setter[index](value)
+		elseif cls.__setter and cls.__setter[index] then
+			return cls.__setter[index](self,value)
+		end
+		error("Can't set value to '"..tostring(cls)..'().'..tostring(index).."'")
+	end
+end
+this_library.PAIRS2 = function(cls)
+	return function(self)
+		local key, value, k2, k3
+		local names = {'method','getter','setter',}
+		return function()
+			k3, key = next(names, k3)
+			value = {}
+			if key == 'method' then
+				k2 = next(self)
+				while k2 do
+					if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+						value[#value+1] = k2
+					end
+					k2 = next(self, k2)
+				end
+				k2 = next(cls)
+				while k2 do
+					if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+						value[#value+1] = k2
+					end
+					k2 = next(cls, k2)
+				end
+				if #value == 0 then key = 'getter' end
+			end
+			if key == 'getter' then
+				if self.__getter then
+					k2 = next(self.__getter)
+					while k2 do
+						if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+							value[#value+1] = k2
+						end
+						k2 = next(self.__getter, k2)
+					end
+				end
+				if cls and cls.__getter then
+					k2 = next(cls.__getter)
+					while k2 do
+						if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+							value[#value+1] = k2
+						end
+						k2 = next(cls.__getter, k2)
+					end
+				end
+				if #value == 0 then key = 'setter' end
+			end
+			if key == 'setter' then
+				if self.__setter then
+					k2 = next(self.__setter)
+					while k2 do
+						if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+							value[#value+1] = k2
+						end
+						k2 = next(self.__setter, k2)
+					end
+				end
+				if cls and cls.__setter then
+					k2 = next(cls.__setter)
+					while k2 do
+						if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+							value[#value+1] = k2
+						end
+						k2 = next(cls.__setter, k2)
+					end
+				end
+				if #value == 0 then key = 'setter' end
+			end
+			if #value == 0 then 
+				return nil, nil
+			end
+			return key, value
+		end
+	end
+end
+this_library.IPAIRS2 = function(cls)
+	return function(self)
+		local key, value, k2, v2
+		local keys = {}
+		k2, v2 = next(self)
+		while k2 do
+			if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+				keys[k2] = v2
+			end
+			k2, v2 = next(self, k2)
+		end
+		k2, v2 = next(cls)
+		while k2 do
+			if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil then
+				keys[k2] = v2
+			end
+			k2, v2 = next(cls, k2)
+		end
+		if self.__getter then
+			k2, v2 = next(self.__getter)
+			while k2 do
+				if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil and keys[k2] == nil then
+					keys[k2] = self.__getter[k2]
+				end
+				k2, v2 = next(self.__getter, k2)
+			end
+			k2, v2 = next(self.__getter)
+			while k2 do
+				if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil and keys[k2] == nil then
+					keys[k2] = self.__getter[k2]
+				end
+				k2, v2 = next(self.__getter, k2)
+			end
+		end
+		if self.__setter then
+			k2, v2 = next(self.__setter)
+			while k2 do
+				if string.match(tostring(k2), "__[a-zA-Z0-9_]+") == nil and keys[k2] == nil then
+					keys[k2] = self.__setter[k2]
+				end
+				k2, v2 = next(self.__setter, k2)
+			end
+		end
+		return function()
+			key, value = next(keys, key)
+			return key, value
+		end
+	end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 return this_library

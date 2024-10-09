@@ -57,6 +57,75 @@ function this_library:Speaker(name)
 	return ret
 end
 
+function.this_library:Speakers()
+	local def_type = 'speaker'
+	local _speakers = {peripheral.find(def_type)}
+	if #_speakers == 0 then error("Can't find any Speaker") end
+	local ret = {speakers={}}
+	for _,s in pairs(_speaker) do
+		ret.speakers[#ret.speakers+1]=this_library:Speaker(peripheral.getName(s))
+	end
+	
+	ret.__getter = {}
+	ret.__setter = {}
+	
+	ret.note = function(instrument, volume, pitch)
+		for _, s in pairs(ret.speaker) do
+			pcall(s.note,this_library.INSTRUMENTS[instrument], volume, pitch)
+		end
+	end
+	ret.sound = function(name, volume, pitch)
+		for _, s in pairs(ret.speaker) do
+			pcall(s.sound,name, volume, pitch)
+		end
+	end
+	ret.audio = function(audio, volume)
+		for _, s in pairs(ret.speaker) do
+			pcall(s.audio,audio, volume)
+		end
+	end
+	ret.stop = function() ret.object.stop() end
+
+	setmetatable(ret, {
+		__index = getset.GETTER, __newindex = getset.SETTER, 
+		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
+		__tostring = function(self)
+			return string.format("Speaker '%s'", self.name)
+		end,
+		__eq = getset.EQ_PERIPHERAL
+	})
+	return ret
+end
+
+function this_library:BoomBox()
+	local ret = {playlist={}}
+	ret.speakers=this_library:Speakers()
+	ret.soundlist = this_library:SoundList()
+	local current_track = ""
+	local duration = 0
+	ret.__getter = {
+		track = function() return current_track end,
+		duration = function() return duration end,
+	}
+	ret.__setter = {
+	}
+	
+	
+	
+	
+	
+	
+	setmetatable(ret, {
+		__index = getset.GETTER, __newindex = getset.SETTER, 
+		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
+		__tostring = function(self)
+			return string.format("Speaker '%s'", self.name)
+		end,
+		__eq = getset.EQ_PERIPHERAL
+	})
+	return ret
+end
+
 
 function this_library.subfolders(tbl, path_tbl, original_path)
 	if #path_tbl == 0 then
@@ -184,8 +253,43 @@ end
 
 
 
+-- Experimental
+local peripheral_type = 'speaker'
+local peripheral_name = 'Speaker'
+local Peripheral = {}
+Peripheral.__items = {}
+Peripheral.note = function(obj) return function(instrument, volume, pitch) obj.object.playNote(this_library.INSTRUMENTS[instrument], volume, pitch) end end
+Peripheral.sound = function(obj) return function(name, volume, pitch) obj.object.playSound(name, volume, pitch) end end
+Peripheral.audio = function(obj) return function(audio, volume)
+	local res, err = pcall(obj.object.playAudio, audio, volume)
+	return res and err or res, err
+end end
+Peripheral.stop = function(obj) return function() obj.object.stop() end end
+Peripheral.new = function(name)
+	-- Wrap or find peripheral
+	local object = name and peripheral.wrap(name) or peripheral.find(peripheral_type)
+	if object == nil then error("Can't connect to "+peripheral_name+" '"..name or peripheral_type.."'") end
+	-- If it already registered, return 
+	if Peripheral.__items[peripheral.getName(object)] then
+		return Peripheral.__items[peripheral.getName(object)]
+	end
+	-- Test for miss-type
+	_name = peripheral.getName(object)
+	_type = peripheral.getType(object)
+	if _type ~= peripheral_type then error("Invalid peripheral type. Expect '"..peripheral_type.."' Present '"..type.."'") end
 
-
-
+	setmetatable(self, {
+		__index = getset.GETTER2(Peripheral), __newindex = getset.SETTER2(Peripheral), 
+		__pairs = getset.PAIRS2(Peripheral), __ipairs = getset.IPAIRS2(Peripheral),
+		__tostring = function(self)
+			return string.format("%s '%s'", peripheral_name, self.name)
+		end,
+		__eq = getset.EQ_PERIPHERAL
+	})
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
+end
+this_library.Speaker_Ex = Peripheral
 
 return this_library
