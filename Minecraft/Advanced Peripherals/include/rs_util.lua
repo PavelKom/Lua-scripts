@@ -31,6 +31,14 @@ local OP_LAMBDA = {
 }
 setmetatable(OP_LAMBDA, {__index = getset.GETTER_TO_UPPER(OP_LAMBDA.LT)})
 
+this_library.TASKRESULT = {
+	[1]= 'start crafting',
+	[0] = 'no materials',
+	[-1] = 'conditions not met',
+	[-2] = 'already crafting',
+	[-3] = 'excess'
+}
+setmetatable(this_library.TASKRESULT, {__index = this_library.TASKRESULT[1]})
 
 -- Peripheral
 function this_library:RSBridge(name)
@@ -151,6 +159,11 @@ function this_library:RSBridge(name)
 	
 	ret.__setter = {}
 	
+	ret.update = function()
+		ret.object = peripheral.wrap(ret.name)
+		if not ret.object then error("Can't connect to RS Bridge '"..name.."'") end
+	end
+	
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
@@ -178,7 +191,10 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 	end
 	ret.craft = function(interface, isOR, force_batch, callback)
 		local result, amount
-		if ret.isFluid then
+		local item = interface.getItem({item=item, nbt=nbt, fingerprint=fingerprint})
+		if item and item.count and item.count >= ret.count then
+			result, amount = false, -3
+		elseif not ret.isFluid then
 			result, amount = ret.craftItem(interface, isOR, force_batch)
 		else
 			result, amount = ret.craftFluid(interface, isOR, force_batch)

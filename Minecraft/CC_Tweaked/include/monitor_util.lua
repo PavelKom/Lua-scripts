@@ -91,7 +91,10 @@ function this_library:Monitor(name)
 	
 	ret.scroll = function (y) ret.object.scroll(y) end
 	ret.write = function (text) ret.object.write(text) end
-	ret.print = ret.write
+	ret.print = function(test, new_x) -- wite text + '\n' + " "*new_x
+		ret.write(text)
+		ret.pos(new_x or 1, ret.pos.y + 1)
+	end
 	ret.blit = function (text, textColour, backgroundColour) ret.object.blit(text, textColour, backgroundColour) end
 	
 	ret.palette = {}

@@ -31,6 +31,15 @@ local OP_LAMBDA = {
 }
 setmetatable(OP_LAMBDA, {__index = getset.GETTER_TO_UPPER(OP_LAMBDA.LT)})
 
+this_library.TASKRESULT = {
+	[1]= 'start crafting',
+	[0] = 'no materials',
+	[-1] = 'conditions not met',
+	[-2] = 'already crafting',
+	[-3] = 'excess'
+}
+setmetatable(this_library.TASKRESULT, {__index = this_library.TASKRESULT[1]})
+
 -- Events
 function this_library.waitCcraftingEvent()
 	--event, success, message
@@ -179,6 +188,11 @@ function this_library:MEBridge(name)
 	
 	ret.__setter = {}
 	
+	ret.update = function()
+		ret.object = peripheral.wrap(ret.name)
+		if not ret.object then error("Can't connect to ME Bridge '"..name.."'") end
+	end
+	
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
@@ -206,7 +220,10 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 	end
 	ret.craft = function(interface, isOR, force_batch, callback)
 		local result, amount
-		if ret.isFluid then
+		local item = interface.getItem({item=item, nbt=nbt, fingerprint=fingerprint})
+		if item and item.count and item.count >= ret.count then
+			result, amount = false, -3
+		elseif not ret.isFluid then
 			result, amount = ret.craftItem(interface, isOR, force_batch)
 		else
 			result, amount = ret.craftFluid(interface, isOR, force_batch)
@@ -218,7 +235,7 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 	end
 	ret.craftItem = function(interface, isOR, force_batch)
 		if not ret.test(interface, isOR) then return false, -1 end
-		if interface.isItemCrafting({item=item, fingerprint=fingerprint}) then return false, -2 end
+		if interface.isItemCrafting({item=item, nbt=nbt, fingerprint=fingerprint}) then return false, -2 end
 		batch = ret.batch or force_batch
 		local result = interface.craftItem({item=item, nbt=nbt, fingerprint=fingerprint, count=batch})
 		while batch > 1 and not result and force_batch == nil do
