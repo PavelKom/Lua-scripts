@@ -1,6 +1,6 @@
 --[[
 	RS Bridge Utility library by PavelKom.
-	Version: 0.6
+	Version: 0.7b
 	Wrapped RS Bridge
 	https://advancedperipherals.netlify.app/peripherals/me_bridge/
 	ToDo: Add manual
@@ -226,6 +226,15 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 		end
 		return result, batch
 	end
+	ret.json = function()
+		return {
+			item=ret.item, fingerprint=ret.fingerprint,
+			count=ret.count,
+			nbt=ret.nbt, isFluid=ret.isFluid,
+			batch=ret.batch,
+			triggers=ret.triggers.json()
+		}
+	end
 	
 	return ret
 end
@@ -276,6 +285,13 @@ function this_library:Triggers(item, fingerprint, count, nbt, trigger_arr, isOR)
 		end
 		return isOR and false or true
 	end
+	ret.json = function()
+		local result = {isOR=ret.isOR, triggers={}}
+		for _, v in pairs(ret.__trgs) do
+			result.triggers[#result.triggers+1] = v.json()
+		end
+		return result
+	end
 	
 	return ret
 end
@@ -299,6 +315,9 @@ function this_library:Trigger(item, fingerprint, count, nbt, operator)
 			return OP_LAMBDA[ret.operator](item.count, ret.count)
 		end
 	end
+	ret.json = function()
+		return {item=ret.item, fingerprint=ret.fingerprint, count=ret.count, nbt=ret.nbt, operator=ret.operator}
+	end
 	
 	return ret
 end
@@ -307,6 +326,35 @@ function testDefaultPeripheral()
 	if this_library.DEFAULT_PERIPHERAL == nil then
 		this_library.DEFAULT_PERIPHERAL = this_library:RSBridge()
 	end
+end
+
+function taskFromJson(json)
+	if type(json) == 'string' then
+		json = textutils.unserializeJSON(json)
+	end
+	return this_library:CraftTask(
+		item=json.item, fingerprint=json.fingerprint,
+		count=json.count,
+		nbt=json.nbt, isFluid=json.isFluid,
+		batch=json.batch,
+		triggers=triggersFromJson(json.triggers)
+	)
+end
+function triggersFromJson(json)
+	if type(json) == 'string' then
+		json = textutils.unserializeJSON(json)
+	end
+	local trg = this_library:Triggers(_,_,_,_,_, json.isOR)
+	for _, v in pairs(json.triggers) do
+		trg.__trgs[#trg.__trgs+1] = triggerFromJson(v)
+	end
+	return result
+end
+function triggerFromJson(json)
+	if type(json) == 'string' then
+		json = textutils.unserializeJSON(json)
+	end
+	return this_library:Trigger(json.item, json.fingerprint, json.count, json.nbt, json.operator)
 end
 
 

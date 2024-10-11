@@ -58,7 +58,7 @@ for element in d2:
         new_data['x'] = (element['atomic_number'] - actinoid[0] + x_l_a_offset) * 2 + x_offset
     else:
         new_data['y'] = new_data['period'] + y_offset
-        new_data['x'] = new_data['group'] * 2 + x_offset
+        new_data['x'] = new_data['group'] * 2 - 1 + x_offset
     # Remove useless data
     for k2 in keys_for_delete:
         if k2 in element:
@@ -70,13 +70,13 @@ for i, v in new_data_dict.items():
     # Fusion chamber
     if i >= main_element_id+2: # Oxygen, Fluorine, ...
         new_data_dict[i]['required'] = [
-            new_data_dict[i-main_element_id]['name'].replace('chemlib:',''),
-            new_data_dict[main_element_id]['name'].replace('chemlib:','')
+            'chemlib:' + new_data_dict[i-main_element_id]['name'].replace('chemlib:',''),
+            'chemlib:' + new_data_dict[main_element_id]['name'].replace('chemlib:','')
         ]
     # Fission chamber
     elif i != main_element_id and i < main_element_id+2: # Hydrogen - Boron, Nitrogen
         new_data_dict[i]['required'] = [
-            new_data_dict[i*2]['name'].replace('chemlib:',''),
+            'chemlib:' + new_data_dict[i*2]['name'].replace('chemlib:',''),
         ]
 
 new_data_list = []

@@ -1,5 +1,5 @@
 --[[
-	Chemlib Autocraft by PavelKom v0.5b
+	Chemlib Autocraft by PavelKom v0.6b
 
 	Autocrafting chemical elements from the chemlib mod using reactors from Alchemistry and ME-RS Bridges
 	Config elements.json is based on
@@ -29,13 +29,6 @@ rs_util = require "include/rs_util"
 me_util = require "include/me_util"
 monitor_util = require "include/monitor_util"
 
-local mon = monitor_util:Monitor()
-local me = me_util:MEBridge()
-local ref = rs_util:RSBridge()
-
-f = io.open('elements.json', 'r')
-local elements_raw = textutils.unserializeJSON(f:read('*a'))
-f:close()
 
 local x_offset = 0
 local y_offset = 0
@@ -53,30 +46,47 @@ local COLOR_RESULT = {
 	['excess'] = colors.green,
 }
 
-local elements = {}
-local tasks = {}
--- 57-71 - lanthanoid
--- 89-103 - actinoid
-for k,v in pairs(elements_raw) do
-	local item = 'chemlib:'..v.name
-	local tbl = {x=v.x, y=v.y, index=v.atomic_number, label=v.abbreviation}
-	local triggers = me_util:Triggers(item, _, ITEM_MAX)
-	if v.required then
-		for _, req in pairs(v.required) do
-			triggers.add('chemlib:'..req, _, math.ceil(ITEM_MAX / 10), _, me_util.OP.GE)
-		end
-	end
-	tasks[v.atomic_number] = me_util:CraftTask(item, ITEM_MAX, _, _, ITEM_BATCH, _, triggers, _)
-	
-	elements[item] = tbl
-end
-elements_raw = nil -- Clear memory
+local mon = monitor_util:Monitor()
+local me = me_util:MEBridge()
+local ref = rs_util:RSBridge()
 
-for k, v in ipairs(elements) do
+f = io.open('elements.json', 'r')
+local elements = textutils.unserializeJSON(f:read('*a'))
+f:close()
+--[[
+abbreviation
+atomic_number
+group
+name
+period
+required
+x
+y
+color
+]]
+local tasks = {}
+for i, element in ipairs(elements) do
+	element.status = element.color and colors[element.color] or colors.red
+	element.color = nil
+	drawElementOnMonitor(element.abbreviation, element.x, element.y, element.color)
+	if element.atomic_number and element.atomic_number > 0 then
+		local triggers = me_util:Triggers(element.name, _, ITEM_MAX)
+		if element.required then
+			for _, req in pairs(element.required) do
+				triggers.add(req, _, math.ceil(ITEM_MAX / 10), _, me_util.OP.GE)
+			end
+		end
+		tasks[element.name] = me_util:CraftTask(element.name, ITEM_MAX, _, _, ITEM_BATCH, _, triggers, _)
+		elements[element.name] = element
+	end
+	elements[i] = nil
+end
+
+for k, v in ipairs(tasks) do
 	if me.isItemCraftable2(k) then
-		me.addTask(tasks[v.index])
+		me.addTask(v)
 	elseif ref.isItemCraftable2(k) then
-		ref.addTask(tasks[v.index])
+		ref.addTask(v)
 	else
 		print("Can't craft", k)
 	end

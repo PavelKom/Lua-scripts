@@ -55,7 +55,7 @@ for _, element in pairs(d2) do
 			new_data['x'] = (element['atomic_number'] - actinoid[1] + x_l_a_offset) * 2 + x_offset
 		else
 			new_data['y'] = new_data['period'] + y_offset
-			new_data['x'] = new_data['group'] * 2 + x_offset
+			new_data['x'] = new_data['group'] * 2 - 1 + x_offset
 		end
 		-- Remove useless data
 		for _, k2 in pairs(keys_for_delete) do
