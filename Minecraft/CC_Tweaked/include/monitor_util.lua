@@ -21,7 +21,7 @@ function this_library:Monitor(name)
 	ret.pos = {}
 	setmetatable(ret.pos, {
 		__call = function(self, x_tbl, y)
-			if type(x_tbl) == 'table' then
+			if type(x_tbl) == 'table' or (x_tbl == nil and y == nil) then
 				ret.object.setCursorPos(x_tbl[1] or x_tbl.x or 1, x_tbl[2] or x_tbl.y or 1)
 			elseif x_tbl ~= nil and y ~= nil then
 				ret.object.setCursorPos(x_tbl, y)
@@ -69,8 +69,8 @@ function this_library:Monitor(name)
 		columns = function() return ret.size[1] end,
 		color = function() return ret.object.isColor() end,
 		
-		row = function() return self.pos.y end,
-		col = function() return self.pos.x end,
+		row = function() return ret.pos.y end,
+		col = function() return ret.pos.x end,
 		
 		x = function() return ret.pos.x end,
 		y = function() return ret.pos.y end,
@@ -177,7 +177,10 @@ function this_library:Monitor(name)
 	ret.setPos = function(x, y) ret.object.setCursorPos(x, y) end
 	ret.clearLine = function() ret.object.clearLine() end
 	ret.clear = function() ret.object.clear() end
-	ret.update = function() ret.object.update() end
+	ret.update = function()
+		ret.object = peripheral.wrap(ret.name)
+		return ret.object ~= nil
+	end
 
 	setmetatable(ret, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 

@@ -62,8 +62,11 @@ local function generateTask(item_or_fingerprint, count, isFluid, nbt, bridge)
 		error("[ONCE_CRAFT] Invalid count parameter")
 	end
 	local s = #isFluid > 0 and string.lower(isFluid[1]) or ''
-	if s == 'y' or s == 't' or s == '1' then isFluid = true else isFluid = false end
-	else isFluid = 0 end
+	if s == 'y' or s == 't' or s == '1' then
+		isFluid = true
+	else
+		isFluid = false
+	end
 	local item, fingerprint
 	if string.find(item_or_fingerprint, ":") == nil then
 		fingerprint = item_or_fingerprint
@@ -74,7 +77,7 @@ local function generateTask(item_or_fingerprint, count, isFluid, nbt, bridge)
 	local data = {item=item, fingerprint=fingerprint, count=tonumber(count),isFluid=isFluid, nbt=nbt, bridge=getRS_ME(bridge)}
 	
 	local filename = uuid()
-	local filepath = DIR_PATH..'/'..
+	local filepath = DIR_PATH..'/'..filename
 	local f = io.open(filepath, 'w')
 	f:write(textutils.serializeJSON(data))
 	f:close()

@@ -75,7 +75,7 @@ local function runOnceTask(path)
 end
 local function readTaskFile(path)
 	-- Read task file
-	local filepath = DIR_PATH..'/'..
+	local filepath = DIR_PATH..'/'..path
 	if not fs.exists(filepath) then return nil end
 	local f = io.open(filepath, 'r')
 	local data = textutils.unserializeJSON(f:read('*a'))
@@ -89,7 +89,7 @@ local function readTaskFile(path)
 end
 local function writeTaskFile(path, data)
 	-- Update task file
-	local filepath = DIR_PATH..'/'..
+	local filepath = DIR_PATH..'/'..path
 	if data.count > 0 then
 		local f = io.open(filepath, 'w')
 		f:write(textutils.serializeJSON(data))
@@ -108,7 +108,7 @@ local function runOnBridge(data, bridge)
 	if data.isFluid then
 		count = data.count
 		local result = bridge.craftFluid({item=data.item, fingerprint=data.fingerprint, nbt=data.nbt, count=count})
-		while count > 0.001 and not result then
+		while count > 0.001 and not result do
 			count = math.ceil((count/10)*1000)/1000
 			result = interface.craftFluid({item=item, nbt=nbt, fingerprint=fingerprint, count=count})
 		end
@@ -116,13 +116,13 @@ local function runOnBridge(data, bridge)
 	else
 		count = data.count
 		local result = bridge.craftItem({item=data.item, fingerprint=data.fingerprint, nbt=data.nbt, count=count})
-		while count > 0.001 and not result then
+		while count > 0.001 and not result do
 			count = math.ceil((count/10))
 			result = interface.craftItem({item=item, nbt=nbt, fingerprint=fingerprint, count=count})
 		end
 		if not result then count = 0 end
 	end
-	return true data.count - count
+	return true, data.count - count
 end
 
 while true do
