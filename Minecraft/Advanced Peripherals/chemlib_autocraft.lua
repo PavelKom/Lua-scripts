@@ -1,7 +1,7 @@
 --[[
 	Chemlib Autocraft by PavelKom v0.5b
 
-	Autocarving chemical elements from the chemlib mod using reactors from Alchemistry and ME-RS Bridges
+	Autocrafting chemical elements from the chemlib mod using reactors from Alchemistry and ME-RS Bridges
 	Config elements.json is based on
 	https://github.com/SmashingMods/ChemLib/blob/9d42c5b4ec148a1497a04c79eee32b5216a2d30e/src/main/resources/data/chemlib/elements.json
 	

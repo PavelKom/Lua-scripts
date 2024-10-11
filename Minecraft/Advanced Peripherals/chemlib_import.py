@@ -1,9 +1,15 @@
-# 
+'''
+    Chemlib Elements Configuration Script by PavelKom v1.0-python
+    The script for the configuration of elements.json to work with chemlib_autocraft.lua
+    Original elements.json
+    https://github.com/SmashingMods/ChemLib/blob/9d42c5b4ec148a1497a04c79eee32b5216a2d30e/src/main/resources/data/chemlib/elements.json
+    
+    Python version (for non-ingame launch)
+'''
 
 import json
 
-# PATH = r'<path to your computer or other folder>/elements.json'
-PATH = r'C:\Users\Pratica\Documents\elements.json'
+PATH = r'elements.json'
 main_element_id = 6 # Carbon
 keys_for_delete = [
     'matter_state',
@@ -36,7 +42,7 @@ for element in d2:
     new_data = {}
     index = element['atomic_number']
     new_data['atomic_number'] = index
-    new_data['name'] = 'chemlib:' + element['name']
+    new_data['name'] = 'chemlib:' + element['name'].replace('chemlib:','')
     new_data['abbreviation'] = element['abbreviation']
     # Add space for elements with 1 character in label
     if len(element['abbreviation']) < 2:
@@ -64,13 +70,13 @@ for i, v in new_data_dict.items():
     # Fusion chamber
     if i >= main_element_id+2: # Oxygen, Fluorine, ...
         new_data_dict[i]['required'] = [
-            new_data_dict[i-main_element_id]['name'],
-            new_data_dict[main_element_id]['name']
+            new_data_dict[i-main_element_id]['name'].replace('chemlib:',''),
+            new_data_dict[main_element_id]['name'].replace('chemlib:','')
         ]
     # Fission chamber
     elif i != main_element_id and i < main_element_id+2: # Hydrogen - Boron, Nitrogen
         new_data_dict[i]['required'] = [
-            new_data_dict[i*2]['name'],
+            new_data_dict[i*2]['name'].replace('chemlib:',''),
         ]
 
 new_data_list = []
@@ -143,41 +149,6 @@ new_data_list.append({
     'y':new_data_dict[actinoid[0]-1]['y']+5,
     'color': 'purple',
     })
-
-
-
-'''
-for i,k in enumerate(d2):
-    # Add requires
-    if i >= main_element_id+1: # Oxygen, Fluorine, ...
-        d2[i]['required'] = [
-            d2[i-main_element_id]['name'],
-            d2[main_element_id-1]['name']
-        ]
-    elif i != main_element_id-1 and i < main_element_id: # Hydrogen - Nitrogen
-        d2[i]['required'] = [
-            d2[i*2+1]['name'],
-        ]
-    # Add space for elements with 1 character in label
-    #if len(d2[i]['abbreviation']) < 2:
-    #    d2[i]['abbreviation'] += ' '
-    #d2[i]['period'] = int(d2[i]['period'])
-    #d2[i]['group'] = int(d2[i]['group'])
-    # Set coordinates for monitor
-    #if d2[i]['atomic_number'] in lantanoid:
-    #    d2[i]['y'] = d2[i]['period'] + y_offset + y_l_a_offset
-    #    d2[i]['x'] = (d2[i]['atomic_number'] - lantanoid[0]+x_l_a_offset) * 2 + x_offset
-    #elif d2[i]['atomic_number'] in actinoid:
-    #    d2[i]['y'] = d2[i]['period'] + y_offset + y_l_a_offset
-    #    d2[i]['x'] = (d2[i]['atomic_number'] - actinoid[0] + x_l_a_offset) * 2 + x_offset
-    #else:
-    #    d2[i]['y'] = d2[i]['period'] + y_offset
-    #    d2[i]['x'] = d2[i]['group'] * 2 + x_offset
-    # Remove useless data
-    #for k2 in keys_for_delete:
-    #    if k2 in k:
-    #        del d2[i][k2]
-'''
 
 with open(PATH, 'w') as f:
     json.dump({'elements':new_data_list}, f, indent=4, sort_keys=True)
