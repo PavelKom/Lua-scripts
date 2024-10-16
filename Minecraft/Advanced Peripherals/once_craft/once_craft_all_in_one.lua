@@ -119,7 +119,7 @@ local function runOnceTasks()
 	queue_size = #files
 	current_error = ''
 	for _, path in pairs(files) do
-		if not fs.isDir(DIR_PATH..'/'..'path') then
+		if not fs.isDir(DIR_PATH..'/'..path) then
 			runOnceTask(path)
 			sleep(delay1)
 		end

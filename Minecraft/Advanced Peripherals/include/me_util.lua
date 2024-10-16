@@ -75,16 +75,16 @@ function this_library:MEBridge(name)
 	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
 	
 	ret.tasks = {}
-	ret.addTaskRaw = function(item, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
-		ret.tasks[#ret.tasks+1] = this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
+	ret.addTaskRaw = function(name, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
+		ret.tasks[#ret.tasks+1] = this_library:CraftTask(name, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
 	end
 	ret.addTask = function(task)
 		ret.tasks[#ret.tasks+1] = task
 	end
-	ret.eraseTask = function(item)
+	ret.eraseTask = function(name)
 		local i = 1
 		while i < #ret.tasks do
-			if ret.tasks[i].item == item then
+			if ret.tasks[i].name == name then
 				table.remove(ret.tasks, i)
 			else
 				i = i + 1
@@ -96,7 +96,7 @@ function this_library:MEBridge(name)
 			table.remove(ret.tasks, 1)
 		end
 	end
-	ret.runTaks = function(callback)
+	ret.runTasks = function(callback)
 		for _, task in pairs(ret.tasks) do
 			task.craft(ret, _, _, callback)
 		end
@@ -206,21 +206,21 @@ function this_library:MEBridge(name)
 end
 
 -- Create Tasks
-function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
-	if item == nil and fingerprint == nil then error("Can't create task, item not specific") end
+function this_library:CraftTask(name, count, fingerprint, nbt, batch, isFluid, triggers, isOR)
+	if name == nil and fingerprint == nil then error("Can't create task, name not specific") end
 	local ret = {
-		item=item, fingerprint=fingerprint,
+		name=name, fingerprint=fingerprint,
 		count=count or this_library.DEFAULT_COUNT,
 		nbt=nbt, isFluid=isFluid,
 		batch=batch or this_library.DEFAULT_BATCH,
-		triggers=triggers or this_library:Triggers(item, fingerprint, count, nbt, _, isOR)
+		triggers=triggers or this_library:Triggers(name, fingerprint, count, nbt, _, isOR)
 	}
 	ret.test = function(interface, isOR)
 		return ret.triggers.test(interface, isOR)
 	end
 	ret.craft = function(interface, isOR, force_batch, callback)
 		local result, amount
-		local item = interface.getItem({item=item, nbt=nbt, fingerprint=fingerprint})
+		local item = interface.getItem({item=ret.item, nbt=ret.nbt, fingerprint=ret.fingerprint})
 		if item and item.count and item.count >= ret.count then
 			result, amount = false, -3
 		elseif not ret.isFluid then
@@ -229,35 +229,39 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 			result, amount = ret.craftFluid(interface, isOR, force_batch)
 		end
 		if callback and type(callback) == 'function' then
-			callback({result=result, item=ret.item, nbt=nbt, fingerprint=ret.fingerprint, amount=amount})
+			callback({	result=result,
+						name=ret.name, nbt=ret.nbt,
+						fingerprint=ret.fingerprint,
+						amount=amount, count=ret.count,
+						interface=interface})
 		end
 		return result, amount
 	end
 	ret.craftItem = function(interface, isOR, force_batch)
 		if not ret.test(interface, isOR) then return false, -1 end
-		if interface.isItemCrafting({item=item, nbt=nbt, fingerprint=fingerprint}) then return false, -2 end
+		if interface.isItemCrafting({name=name, nbt=nbt, fingerprint=fingerprint}) then return false, -2 end
 		batch = ret.batch or force_batch
-		local result = interface.craftItem({item=item, nbt=nbt, fingerprint=fingerprint, count=batch})
+		local result = interface.craftItem({name=ret.name, nbt=ret.nbt, fingerprint=ret.fingerprint, count=ret.batch})
 		while batch > 1 and not result and force_batch == nil do
 			batch = math.ceil(batch/10)
-			result = interface.craftItem({item=item, nbt=nbt, fingerprint=fingerprint, count=batch})
+			result = interface.craftItem({name=ret.name, nbt=ret.nbt, fingerprint=ret.fingerprint, count=ret.batch})
 		end
 		return result, batch
 	end
 	ret.craftFluid = function(interface, isOR, force_batch)
 		if not ret.test(interface, isOR) then return false, -1 end
-		if interface.isItemCrafting({item=item, fingerprint=fingerprint}) then return false, -2 end
+		if interface.isItemCrafting({name=ret.name, nbt=ret.nbt, fingerprint=ret.fingerprint}) then return false, -2 end
 		batch = ret.batch or force_batch
-		local result = interface.craftFluid({item=item, nbt=nbt, fingerprint=fingerprint, count=batch})
+		local result = interface.craftFluid({name=ret.name, nbt=ret.nbt, fingerprint=ret.fingerprint, count=ret.batch})
 		while batch > 0.001 and not result and force_batch == nil do
 			batch = math.ceil((batch/10)*1000)/1000
-			result = interface.craftFluid({item=item, nbt=nbt, fingerprint=fingerprint, count=batch})
+			result = interface.craftFluid({name=ret.name, nbt=ret.nbt, fingerprint=ret.fingerprint, count=ret.batch})
 		end
 		return result, batch
 	end
 	ret.json = function()
 		return {
-			item=ret.item, fingerprint=ret.fingerprint,
+			name=ret.name, fingerprint=ret.fingerprint,
 			count=ret.count,
 			nbt=ret.nbt, isFluid=ret.isFluid,
 			batch=ret.batch,
@@ -269,22 +273,22 @@ function this_library:CraftTask(item, count, fingerprint, nbt, batch, isFluid, t
 end
 
 -- Trigger list
-function this_library:Triggers(item, fingerprint, count, nbt, trigger_arr, isOR)
+function this_library:Triggers(name, fingerprint, count, nbt, trigger_arr, isOR)
 	local ret = {__trgs={}, isOR=isOR}
-	if item ~= nil or fingerprint ~= nil then
-		ret.__trgs[#ret.__trgs+1] = this_library:Trigger(item, fingerprint, count, nbt)
+	if name ~= nil or fingerprint ~= nil then
+		ret.__trgs[#ret.__trgs+1] = this_library:Trigger(name, fingerprint, count, nbt)
 	end
-	ret.add = function(item, fingerprint, count, nbt, operator)
-		ret.__trgs[#ret.__trgs+1] = this_library:Trigger(item, fingerprint, count, nbt, operator)
+	ret.add = function(name, fingerprint, count, nbt, operator)
+		ret.__trgs[#ret.__trgs+1] = this_library:Trigger(name, fingerprint, count, nbt, operator)
 		return ret.__trgs[#ret.__trgs]
 	end
 	ret.clear = function()
 		while #ret.__trgs > 0 do table.remove(ret.__trgs, 1) end
 	end
-	ret.erase = function(item)
+	ret.erase = function(name)
 		local i = 1
 		while i < #ret.__trgs do
-			if ret.__trgs[i].item == item then
+			if ret.__trgs[i].name == name then
 				table.remove(ret.__trgs, i)
 			else
 				i = i + 1
@@ -326,11 +330,11 @@ function this_library:Triggers(item, fingerprint, count, nbt, trigger_arr, isOR)
 end
 
 -- Trigger
-function this_library:Trigger(item, fingerprint, count, nbt, operator)
-	local ret = {item=item, fingerprint=fingerprint, count=count, nbt=nbt, operator=operator or this_library.OP.LT}
+function this_library:Trigger(name, fingerprint, count, nbt, operator)
+	local ret = {name=name, fingerprint=fingerprint, count=count, nbt=nbt, operator=operator or this_library.OP.LT}
 	ret.test = function(interface)
 		if interface == nil then return false end
-		local item = interface.getFl({item=item, nbt=nbt, fingerprint=fingerprint})
+		local item = interface.getItem({name=name, nbt=nbt, fingerprint=fingerprint})
 		if item == nil or item.count == nil then
 			if ret.count > 0 and (ret.operator == this_library.OP.LT or 
 				ret.operator == this_library.OP.LE or 
@@ -341,11 +345,11 @@ function this_library:Trigger(item, fingerprint, count, nbt, operator)
 				return true
 			else return false end
 		else
-			return OP_LAMBDA[ret.operator](item.count, ret.count)
+			return OP_LAMBDA[ret.operator](name.count, ret.count)
 		end
 	end
 	ret.json = function()
-		return {item=ret.item, fingerprint=ret.fingerprint, count=ret.count, nbt=ret.nbt, operator=ret.operator}
+		return {name=ret.name, fingerprint=ret.fingerprint, count=ret.count, nbt=ret.nbt, operator=ret.operator}
 	end
 	return ret
 end
@@ -356,19 +360,19 @@ function testDefaultPeripheral()
 	end
 end
 
-function taskFromJson(json)
+function this_library.taskFromJson(json)
 	if type(json) == 'string' then
 		json = textutils.unserializeJSON(json)
 	end
 	return this_library:CraftTask(
-		item=json.item, fingerprint=json.fingerprint,
-		count=json.count,
-		nbt=json.nbt, isFluid=json.isFluid,
-		batch=json.batch,
-		triggers=triggersFromJson(json.triggers)
+		json.name, json.fingerprint,
+		json.count,
+		json.nbt, json.isFluid,
+		json.batch,
+		triggersFromJson(json.triggers)
 	)
 end
-function triggersFromJson(json)
+function this_library.triggersFromJson(json)
 	if type(json) == 'string' then
 		json = textutils.unserializeJSON(json)
 	end
@@ -378,11 +382,11 @@ function triggersFromJson(json)
 	end
 	return result
 end
-function triggerFromJson(json)
+function this_library.triggerFromJson(json)
 	if type(json) == 'string' then
 		json = textutils.unserializeJSON(json)
 	end
-	return this_library:Trigger(json.item, json.fingerprint, json.count, json.nbt, json.operator)
+	return this_library:Trigger(json.name, json.fingerprint, json.count, json.nbt, json.operator)
 end
 
 

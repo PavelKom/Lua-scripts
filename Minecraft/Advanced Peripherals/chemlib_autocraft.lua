@@ -95,8 +95,8 @@ tasks = nil -- Clear memory
 
 function CraftCallback(data)
 	--callback({result=result, item=ret.item, nbt=nbt, fingerprint=ret.fingerprint, amount=amount})
-	if elements[data.item].status ~= COLOR_RESULT[me_util.TASKRESULT[amount]] then
-		elements[data.item].status = COLOR_RESULT[me_util.TASKRESULT[amount]]
+	if elements[data.item].status ~= COLOR_RESULT[me_util.TASKRESULT[data.amount]] then
+		elements[data.item].status = COLOR_RESULT[me_util.TASKRESULT[data.amount]]
 		drawElementOnMonitor(elements[data.item].label,
 			elements[data.item].x, elements[data.item].y,
 			elements[data.item].status
