@@ -1,21 +1,20 @@
 --[[
 	Player Detector Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Player Detector
 	https://advancedperipherals.netlify.app/peripherals/player_detector/
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
+local lib = {}
 
 -- Events
-function this_library.waitPlayerClickEvent()
+function lib.waitPlayerClickEvent()
 	--event, username, device
 	return os.pullEvent("playerClick")
 end
-function this_library.waitPlayerClickEventEx(func)
+function lib.waitPlayerClickEventEx(func)
 	--[[
 	Create semi-infinite loop for playerClick event listener
 	func - callback function. Must have arguments:
@@ -27,7 +26,7 @@ function this_library.waitPlayerClickEventEx(func)
 		And return true. Else stop loop 
 	]]
 	if func == nil then
-		error('this_library.waitChatEventEx must have callback function')
+		error('lib.waitChatEventEx must have callback function')
 	end
 	local loop = true
 	while loop do
@@ -35,11 +34,11 @@ function this_library.waitPlayerClickEventEx(func)
 	end
 end
 
-function this_library.waitPlayerJoinvent()
+function lib.waitPlayerJoinvent()
 	--event, username, dimension
 	return os.pullEvent("playerJoin")
 end
-function this_library.waitPlayerJoinEventEx(func)
+function lib.waitPlayerJoinEventEx(func)
 	--[[
 	Create semi-infinite loop for playerJoin event listener
 	func - callback function. Must have arguments:
@@ -59,11 +58,11 @@ function this_library.waitPlayerJoinEventEx(func)
 	end
 end
 
-function this_library.waitPlayerLeaveEvent()
+function lib.waitPlayerLeaveEvent()
 	--event, username, dimension
 	return os.pullEvent("playerLeave")
 end
-function this_library.waitPlayerLeaveEventEx(func)
+function lib.waitPlayerLeaveEventEx(func)
 	--[[
 	Create semi-infinite loop for playerLeave event listener
 	func - callback function. Must have arguments:
@@ -83,11 +82,11 @@ function this_library.waitPlayerLeaveEventEx(func)
 	end
 end
 
-function this_library.waitPlayerChangedDimensionEvent()
+function lib.waitPlayerChangedDimensionEvent()
 	--event, username, fromDim, toDim
 	return os.pullEvent("playerChangedDimension")
 end
-function this_library.waitPlayerChangedDimensionEventEx(func)
+function lib.waitPlayerChangedDimensionEventEx(func)
 	--[[
 	Create semi-infinite loop for playerChangedDimension event listener
 	func - callback function. Must have arguments:
@@ -108,125 +107,127 @@ function this_library.waitPlayerChangedDimensionEventEx(func)
 	end
 end
 
--- Peripheral
-function this_library:PlayerDetector(name)
-	local def_type = 'playerDetector'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Player Detector '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {
-		online = function() return ret.object.getOnlinePlayers() end
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'playerDetector', 'Player Detector', Peripheral)
+	if wrapped ~= nil then return wrapped end
+	self.__getter = {
+		online = function() return self.object.getOnlinePlayers() end
 	}
-	ret.__setter = {}
+	self.__setter = {}
 	
-	ret.getOnlinePlayers = ret.__getter.online
-	ret.getOnline = ret.__getter.online
+	self.getOnlinePlayers = self.__getter.online
+	self.getOnline = self.__getter.online
 	
-	ret.getPlayerPos = function(username) return ret.object.getPlayerPos(username) end
-	ret.playerPos = ret.getPlayerPos
-	ret.player = ret.getPlayerPos
+	self.getPlayerPos = function(username) return self.object.getPlayerPos(username) end
+	self.playerPos = self.getPlayerPos
+	self.player = self.getPlayerPos
 	
-	ret.inRange = function(range) return ret.object.getPlayersInRange(range) end
+	self.inRange = function(range) return self.object.getPlayersInRange(range) end
 	
-	ret.inCords = function(posOne, posTwo) return ret.object.getPlayersInCoords(posOne, posTwo) end
-	ret.inCords2 = function(x1,y1,z1, x2,y2,z2) return ret.object.getPlayersInCoords({x=x1, y=y1, z=z1}, {x=x2, y=y2, z=z2}) end
+	self.inCords = function(posOne, posTwo) return self.object.getPlayersInCoords(posOne, posTwo) end
+	self.inC.ords2 = function(x1,y1,z1, x2,y2,z2) return self.object.getPlayersInCoords({x=x1, y=y1, z=z1}, {x=x2, y=y2, z=z2}) end
 	
-	ret.inCubic = function(whd) return ret.object.getPlayersInCubic(whd.x or whd.w, whd.y or whd.h, whd.z or whd.d) end
-	ret.inCubic2 = function(w, h, d) return ret.object.getPlayersInCubic(w, h, d) end
+	self.inCubic = function(whd) return self.object.getPlayersInCubic(whd.x or whd.w, whd.y or whd.h, whd.z or whd.d) end
+	self.inCubic2 = function(w, h, d) return self.object.getPlayersInCubic(w, h, d) end
 	
-	ret.isInRange = function(range, username)
+	self.isInRange = function(range, username)
 		if username ~= nil then
-			return ret.object.isPlayerInRange(range, username)
+			return self.object.isPlayerInRange(range, username)
 		else
-			return ret.object.isPlayersInRange(range)
+			return self.object.isPlayersInRange(range)
 		end
 	end
-	ret.isInCords = function(posOne, posTwo, username)
+	self.isInCords = function(posOne, posTwo, username)
 		if username ~= nil then
-			return ret.object.isPlayerInRange(posOne, posTwo, username)
+			return self.object.isPlayerInRange(posOne, posTwo, username)
 		else
-			return ret.object.isPlayersInCoords(posOne, posTwo)
+			return self.object.isPlayersInCoords(posOne, posTwo)
 		end
 	end
-	ret.isInCords2 = function(x1,y1,z1, x2,y2,z2, username) return ret.isInCords({x=x1, y=y1, z=z1}, {x=x2, y=y2, z=z2}, username) end
+	self.isInCords2 = function(x1,y1,z1, x2,y2,z2, username) return self.isInCords({x=x1, y=y1, z=z1}, {x=x2, y=y2, z=z2}, username) end
 	
-	ret.isInCubic = function(whd, username)
+	self.isInCubic = function(whd, username)
 		if username ~= nil then
-			return ret.object.isPlayerInCubic(whd.x or whd.w, whd.y or whd.h, whd.z or whd.d, username)
+			return self.object.isPlayerInCubic(whd.x or whd.w, whd.y or whd.h, whd.z or whd.d, username)
 		else
-			return ret.object.isPlayersInCubic(whd.x or whd.w, whd.y or whd.h, whd.z or whd.d)
+			return self.object.isPlayersInCubic(whd.x or whd.w, whd.y or whd.h, whd.z or whd.d)
 		end
 	end
-	ret.isInCubic2 = function(w, h, d, username) return ret.isInCubic({w=w, h=h, d=d}, username) end
+	self.isInCubic2 = function(w, h, d, username) return self.isInCubic({w=w, h=h, d=d}, username) end
 	
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Player Detector '%s'", self.name, self.rate, self.limit)
+			return string.format("%s '%s'", self.type, self.name, self.rate, self.limit)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.PlayerDetector=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:PlayerDetector()
+	if not Peripheral.default then
+		Peripheral()
 	end
 end
 
-function this_library.getPlayerPos(username)
+function lib.getPlayerPos(username)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.playerPos(username)
+	return Peripheral.default.playerPos(username)
 end
-function this_library.online()
+function lib.online()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.online
+	return Peripheral.default.online
 end
-function this_library.inRange(range)
+function lib.inRange(range)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.inRange(range)
+	return Peripheral.default.inRange(range)
 end
-function this_library.inCords(posOne, posTwo)
+function lib.inCords(posOne, posTwo)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.inCords(posOne, posTwo)
+	return Peripheral.default.inCords(posOne, posTwo)
 end
-function this_library.inCords2(x1,y1,z1, x2,y2,z2)
+function lib.inCords2(x1,y1,z1, x2,y2,z2)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.inCords2(x1,y1,z1, x2,y2,z2)
+	return Peripheral.default.inCords2(x1,y1,z1, x2,y2,z2)
 end
-function this_library.inCubic(whd)
+function lib.inCubic(whd)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.inCubic(whd)
+	return Peripheral.default.inCubic(whd)
 end
-function this_library.inCubic2(w, h, d)
+function lib.inCubic2(w, h, d)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.inCubic2(w, h, d)
+	return Peripheral.default.inCubic2(w, h, d)
 end
-function this_library.isInRange(range, username)
+function lib.isInRange(range, username)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isInRange(range, username)
+	return Peripheral.default.isInRange(range, username)
 end
-function this_library.isInCords(posOne, posTwo, username)
+function lib.isInCords(posOne, posTwo, username)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isInCords(posOne, posTwo, username)
+	return Peripheral.default.isInCords(posOne, posTwo, username)
 end
-function this_library.isInCords2(x1,y1,z1, x2,y2,z2, username)
+function lib.isInCords2(x1,y1,z1, x2,y2,z2, username)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isInCords2(x1,y1,z1, x2,y2,z2, username)
+	return Peripheral.default.isInCords2(x1,y1,z1, x2,y2,z2, username)
 end
-function this_library.isInCubic(whd, username)
+function lib.isInCubic(whd, username)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isInCubic(whd, username)
+	return Peripheral.default.isInCubic(whd, username)
 end
-function this_library.isInCubic2(w, h, d, username)
+function lib.isInCubic2(w, h, d, username)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isInCubic2(w, h, d, username)
+	return Peripheral.default.isInCubic2(w, h, d, username)
 end
 
-return this_library
+return lib

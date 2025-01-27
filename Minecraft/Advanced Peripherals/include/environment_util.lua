@@ -1,164 +1,166 @@
 --[[
 	Environment Detector Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Environment Detector
 	https://advancedperipherals.netlify.app/peripherals/environment_detector/
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
+local lib = {}
 
--- Peripheral
-function this_library:EnvironmentDetector(name)
-	local def_type = 'environmentDetector'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Environment Detector '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'environmentDetector', 'Environment Detector', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.__getter = {
-		biome = function() return ret.object.getBiome() end,
-		blockLight = function() return ret.object.getBlockLightLevel() end,
-		dayLight = function() return ret.object.getDayLightLevel() end,
-		skyLight = function() return ret.object.getSkyLightLevel() end,
-		dimName = function() return ret.object.getDimensionName() end,
-		dimPaN = function() return ret.object.getDimensionPaN() end,
-		dimProvider = function() return ret.object.getDimensionProvider() end,
-		moonId = function() return ret.object.getMoonId() end,
-		moonName = function() return ret.object.getMoonName() end,
-		time = function() return ret.object.getTime() end,
-		radiation = function() return ret.object.getRadiation() end,
-		radiationRaw = function() return ret.object.getRadiationRaw() end,
-		rain = function() return ret.object.isRaining() end,
-		sunny = function() return ret.object.isSunny() end,
-		thunder = function() return ret.object.isThunder() end,
-		slimes = function() return ret.object.isSlimeChunk() end,
-		dims = function() return ret.object.listDimensions() end,
+	self.__getter = {
+		biome = function() return self.object.getBiome() end,
+		blockLight = function() return self.object.getBlockLightLevel() end,
+		dayLight = function() return self.object.getDayLightLevel() end,
+		skyLight = function() return self.object.getSkyLightLevel() end,
+		dimName = function() return self.object.getDimensionName() end,
+		dimPaN = function() return self.object.getDimensionPaN() end,
+		dimProvider = function() return self.object.getDimensionProvider() end,
+		moonId = function() return self.object.getMoonId() end,
+		moonName = function() return self.object.getMoonName() end,
+		time = function() return self.object.getTime() end,
+		radiation = function() return self.object.getRadiation() end,
+		radiationRaw = function() return self.object.getRadiationRaw() end,
+		rain = function() return self.object.isRaining() end,
+		sunny = function() return self.object.isSunny() end,
+		thunder = function() return self.object.isThunder() end,
+		slimes = function() return self.object.isSlimeChunk() end,
+		dims = function() return self.object.listDimensions() end,
 	}
-	ret.__getter.weather = function()
-		if ret.sunny then return {0, 'sunny'}
-		elseif ret.rain then return {1, 'rain'}
-		else return {2, 'thunder'} end
+	self.__getter.weather = function()
+		if self.sunny then return 0, 'sunny'
+		elseif self.rain then return 1, 'rain'
+		else return 2, 'thunder' end
 	end
-	ret.__getter.moon = function() return {ret.moonId, ret.moonName} end
-	ret.__getter.moonPhase = ret.__getter.moonId
-	ret.__getter.rad = ret.__getter.radiation
-	ret.__getter.radRaw = ret.__getter.radiationRaw
-	ret.__getter.rad2 = ret.__getter.radiationRaw
-	ret.isRaining = ret.__getter.rain
-	ret.isSunny = ret.__getter.sunny
-	ret.isThunder = ret.__getter.thunder
-	ret.isSlimeChunk = ret.__getter.slimes
-	ret.isDim = function(dimension) return ret.object.isDimension(dimension) end
-	ret.isMoon = function(moonPhaseId) return ret.object.isMoon(moonPhaseId) end
-	ret.scanEntities = function(range) return ret.object.scanEntities() end
-	ret.scan = ret.scanEntities
+	self.__getter.moon = function() return {self.moonId, self.moonName} end
+	self.__getter.moonPhase = self.__getter.moonId
+	self.__getter.rad = self.__getter.radiation
+	self.__getter.radRaw = self.__getter.radiationRaw
+	self.__getter.rad2 = self.__getter.radiationRaw
+	self.isRaining = self.__getter.rain
+	self.isSunny = self.__getter.sunny
+	self.isThunder = self.__getter.thunder
+	self.isSlimeChunk = self.__getter.slimes
+	self.isDim = function(dimension) return self.object.isDimension(dimension) end
+	self.isMoon = function(moonPhaseId) return self.object.isMoon(moonPhaseId) end
+	self.scanEntities = function(range) return self.object.scanEntities() end
+	self.scan = self.scanEntities
 	
-	ret.__setter = {}
-	setmetatable(ret, {
+	self.__setter = {}
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Environment Detector '%s' Biome(%s) Time(%f) Rain(%s) Thunder(%s) Slime Chunk(%s)", self.name, self.biome, self.time, tostring(self.rain), tostring(self.thunder), tostring(self.slime))
+			return string.format("%s '%s' Biome(%s) Time(%f) Rain(%s) Thunder(%s) Slime Chunk(%s)", self.type, self.name, self.biome, self.time, tostring(self.rain), tostring(self.thunder), tostring(self.slime))
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.Monitor=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:EnvironmentDetector()
+	if not Peripheral.default then
+		Peripheral()
 	end
 end
 
-function this_library.getBiome()
+function lib.getBiome()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.biome
+	return Peripheral.default.biome
 end
-function this_library.getBlockLight()
+function lib.getBlockLight()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.blockLight
+	return Peripheral.default.blockLight
 end
-function this_library.getDayLight()
+function lib.getDayLight()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.dayLight
+	return Peripheral.default.dayLight
 end
-function this_library.getSkyLight()
+function lib.getSkyLight()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.skyLight
+	return Peripheral.default.skyLight
 end
-function this_library.getDimName()
+function lib.getDimName()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.dimName
+	return Peripheral.default.dimName
 end
-function this_library.getDimPaN()
+function lib.getDimPaN()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.dimPaN
+	return Peripheral.default.dimPaN
 end
-function this_library.getDimProvider()
+function lib.getDimProvider()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.dimProvider
+	return Peripheral.default.dimProvider
 end
-function this_library.getMoonId()
+function lib.getMoonId()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.moonId
+	return Peripheral.default.moonId
 end
-function this_library.getMoonPhase()
+function lib.getMoonPhase()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.moonPhase
+	return Peripheral.default.moonPhase
 end
-function this_library.getMoonName()
+function lib.getMoonName()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.moonName
+	return Peripheral.default.moonName
 end
-function this_library.getTime()
+function lib.getTime()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.time
+	return Peripheral.default.time
 end
-function this_library.getRadiation()
+function lib.getRadiation()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.radiation
+	return Peripheral.default.radiation
 end
-function this_library.getRadiationRaw()
+function lib.getRadiationRaw()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.radiationRaw
+	return Peripheral.default.radiationRaw
 end
-function this_library.isDim(dimension)
+function lib.isDim(dimension)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isDim(dimension)
+	return Peripheral.default.isDim(dimension)
 end
-function this_library.isMoon(moonPhaseId)
+function lib.isMoon(moonPhaseId)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isMoon(moonPhaseId)
+	return Peripheral.default.isMoon(moonPhaseId)
 end
-function this_library.isRaining()
+function lib.isRaining()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.rain
+	return Peripheral.default.rain
 end
-function this_library.isSunny()
+function lib.isSunny()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.sunny
+	return Peripheral.default.sunny
 end
-function this_library.isThunder()
+function lib.isThunder()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.thunder
+	return Peripheral.default.thunder
 end
-function this_library.isSlimeChunk()
+function lib.isSlimeChunk()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.slimes
+	return Peripheral.default.slimes
 end
-function this_library.getListDimensions()
+function lib.getListDimensions()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.dims
+	return Peripheral.default.dims
 end
-function this_library.scanEntities(range)
+function lib.scanEntities(range)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.scanEntities(range)
+	return Peripheral.default.scanEntities(range)
 end
 
-return this_library
+return lib

@@ -1,117 +1,147 @@
 --[[
 	Inventory Manager Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Inventory Manager
 	https://advancedperipherals.netlify.app/peripherals/inventory_manager/
 	ToDo: Add manual
 ]]
 getset = require 'getset_util'
+local lib = {}
+lib.SIDES = getset.SIDES
 
-local this_library = {}
-this_library.SIDES = getset.SIDES
-
-this_library.DEFAULT_PERIPHERAL = nil
-
--- Peripheral
-function this_library:InventoryManager(name)
-	local def_type = 'inventoryManager'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Inventory Manager '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'inventoryManager', 'Inventory Manager', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.__getter = {
-		armor = function() return ret.object.getArmor() end,
-		items = function() return ret.object.getItems() end,
-		owner = function() return ret.object.getOwner() end,
-		hand = function() return ret.object.getItemInHand() end,
-		hand2 = function() return ret.object.getItemInOffHand() end,
-		free = function() return ret.object.getFreeSlot() end,
-		space = function() return ret.object.isSpaceAvailable() end,
-		empty = function() return ret.object.getEmptySpace() end
+	self.__getter = {
+		armor = function() return self.object.getArmor() end,
+		items = function() return self.object.getItems() end,
+		owner = function() return self.object.getOwner() end,
+		hand = function() return self.object.getItemInHand() end,
+		hand2 = function() return self.object.getItemInOffHand() end,
+		free = function() return self.object.getFreeSlot() end,
+		space = function() return self.object.isSpaceAvailable() end,
+		empty = function() return self.object.getEmptySpace() end
 	}
-	ret.__setter = {}
+	self.__setter = {}
 	
-	ret.addItemToPlayer = function(direction, count, toSlot, item) return ret.object.addItemToPlayer(direction, count, toSlot, item) end
-	ret.addItem = ret.addItemToPlayer
-	ret.add = ret.addItemToPlayer
+	--1.92.x version
+	--self.addItemToPlayer = function(direction, count, toSlot, item) return self.object.addItemToPlayer(direction, count, toSlot, item) end
+	self.addItemToPlayer = function(direction, name, fromSlot, toSlot, count, fingerprint, tag, nbt, components)
+		return self.object.addItemToPlayer(direction, {
+			name=name, -- Item name like 'minecraft:cobbleston', '#wood' or nil
+			components=components, tag=tag, nbt=nbt,
+			fingerprint=fingerprint,
+			fromSlot=fromSlot,
+			toSlot=toSlot,
+			count=count})
+	end
+	self.addItem = self.addItemToPlayer
+	self.add = self.addItemToPlayer
+	self.addItemToPlayer2 = function(direction, item)
+		return self.object.addItemToPlayer(direction, item)
+	end
+	self.addItem2 = self.addItemToPlayer2
+	self.add2 = self.addItemToPlayer2
 	
-	ret.removeItemFromPlayer = function(direction, count, toSlot, item) return ret.object.removeItemFromPlayer(direction, count, toSlot, item) end
-	ret.removeItem = ret.removeItemFromPlayer
-	ret.remove = ret.removeItemFromPlayer
+	--1.92.x version
+	--self.removeItemFromPlayer = function(direction, count, toSlot, item) return self.object.removeItemFromPlayer(direction, count, toSlot, item) end
+	self.removeItemFromPlayer = function(direction, name, fromSlot, toSlot, count, fingerprint, tag, nbt, components)
+		return self.object.removeItemFromPlayer(direction, {
+			name=name, -- Item name like 'minecraft:cobbleston', '#wood' or nil
+			components=components, tag=tag, nbt=nbt,
+			fingerprint=fingerprint,
+			fromSlot=fromSlot,
+			toSlot=toSlot,
+			count=count})
+	end
+	self.removeItem = self.removeItemFromPlayer
+	self.remove = self.removeItemFromPlayer
+	self.removeItemFromPlayer2 = function(direction, item)
+		return self.object.removeItemFromPlayer(direction, item)
+	end
+	self.removeItem2 = self.removeItemFromPlayer2
+	self.remove2 = self.removeItemFromPlayer2
 	
-	ret.isWearing = function(slot)
+	self.isWearing = function(slot)
 		if slot == nil then
-			return ret.object.isPlayerEquipped()
+			return self.object.isPlayerEquipped()
 		else
-			return ret.object.isWearing(slot) -- Always return false ???
+			return self.object.isWearing(slot) -- Always return false ???
 		end
 	end
-	ret.__getter.offHand = ret.__getter.hand2
-	ret.getHand = function(offHand)
-		if offHand then return ret.hand2 end
-		return ret.hand
+	self.__getter.offHand = self.__getter.hand2
+	self.getHand = function(offHand)
+		if offHand then return self.hand2 end
+		return self.hand
 	end
 	
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Inventory Manager '%s' Owner: %i", self.name, self.owner)
+			return string.format("%s '%s' Owner: %s", self.type, self.name, self.owner)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.InventoryManager=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:InventoryManager()
+	if Peripheral.default == nil then
+		Peripheral()
 	end
 end
 
-function this_library.addItem(direction, item)
+function lib.addItem(direction, name, fromSlot, toSlot, count, components, fingerprint)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.addItem(direction, item)
+	return Peripheral.default.addItem(direction, name, fromSlot, toSlot, count, components, fingerprint)
 end
-function this_library.removeItem(direction, item)
+function lib.removeItem(direction, name, fromSlot, toSlot, count, components, fingerprint)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.removeItem(direction, item)
+	return Peripheral.default.removeItem(direction, name, fromSlot, toSlot, count, components, fingerprint)
 end
-function this_library.getArmor()
+function lib.getArmor()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.armor
+	return Peripheral.default.armor
 end
-function this_library.getItems()
+function lib.getItems()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.items
+	return Peripheral.default.items
 end
-function this_library.getOwner()
+function lib.getOwner()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.owner
+	return Peripheral.default.owner
 end
-function this_library.isWearing(slot)
+function lib.isWearing(slot)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isWearing(slot)
+	return Peripheral.default.isWearing(slot)
 end
-function this_library.getHand(secondary)
+function lib.getHand(secondary)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getHand(secondary)
+	return Peripheral.default.getHand(secondary)
 end
-function this_library.getFreeSlot()
+function lib.getFreeSlot()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getFreeSlot()
+	return Peripheral.default.getFreeSlot()
 end
-function this_library.isSpaceAvailable()
+function lib.isSpaceAvailable()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isSpaceAvailable()
+	return Peripheral.default.isSpaceAvailable()
 end
-function this_library.getEmptySpace()
+function lib.getEmptySpace()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getEmptySpace()
+	return Peripheral.default.getEmptySpace()
 end
 
 
-return this_library
+return lib

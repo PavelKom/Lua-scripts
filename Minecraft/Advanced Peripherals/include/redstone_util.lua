@@ -1,16 +1,14 @@
 --[[
 	Redstone Integrator Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Redstone Integrator
 	https://advancedperipherals.netlify.app/peripherals/redstone_integrator/
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.SIDES = getset.SIDES
-
-this_library.DEFAULT_PERIPHERAL = nil
+local lib = {}
+lib.SIDES = getset.SIDES
 
 function outputParser(tbl)
 	return function(side, value)
@@ -22,132 +20,73 @@ function outputParser(tbl)
 	end
 end
 
--- Peripheral
-function this_library:RedstoneIntegrator(name)
-	local def_type = 'redstoneIntegrator'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Redstone Integrator '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'redstoneIntegrator', 'Redstone Integrator', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.getInput = function(side) return ret.object.getInput(this_library.SIDES[side]) end
-	ret.getAnalogInput = function(side) return ret.object.getAnalogInput(this_library.SIDES[side]) end
-	ret.getOutput = function(side) return ret.object.getOutput(this_library.SIDES[side]) end
-	ret.getAnalogOutput = function(side) return ret.object.getAnalogOutput(this_library.SIDES[side]) end
-	ret.setOutput = function(side, powered) return ret.object.setOutput(this_library.SIDES[side], powered) end
-	ret.setAnalogOutput = function(side, powered) return ret.object.setAnalogOutput(this_library.SIDES[side], powered) end
+	self.getInput = function(side) return self.object.getInput(lib.SIDES[side]) end
+	self.getAnalogInput = function(side) return self.object.getAnalogInput(lib.SIDES[side]) end
+	self.getOutput = function(side) return self.object.getOutput(lib.SIDES[side]) end
+	self.getAnalogOutput = function(side) return self.object.getAnalogOutput(lib.SIDES[side]) end
+	self.setOutput = function(side, powered) return self.object.setOutput(lib.SIDES[side], powered) end
+	self.setAnalogOutput = function(side, powered) return self.object.setAnalogOutput(lib.SIDES[side], powered) end
 	
-	ret.input = {}
-	getset.metaSide(ret.input, ret.getInput, _, ret.getAnalogInput, ret.getAnalogInput)
-	--[[
-	setmetatable(ret.input, {
-	__call = function(self, side) return ret.getAnalogInput(this_library.SIDES[side]) end,
-	__index = function(self, side) return ret.getInput(this_library.SIDES[side]) end,
-	__pairs = function(self) -- Return relatives
-		local i = 0
-		local key, value
-		return function()
-			i = i + 1
-			key = this_library.SIDES[i]
-			if i > 6 then return nil, nil end
-			value = ret.getAnalogInput(key)
-			return key, value
-		end
-	end,
-	__ipairs = function(self) -- Return cardinals
-		local i = 6
-		local key, value
-		return function()
-			i = i + 1
-			key = this_library.SIDES[i]
-			if i > 12 then return nil, nil end
-			value = ret.getAnalogInput(key)
-			return key, value
-		end
-	end,
-	})]]
+	self.input = getset.metaSide({}, self.getInput, _, self.getAnalogInput, self.getAnalogInput)
 	
-	ret.output = {}
-	getset.metaSide(ret.output, ret.getOutput, outputParser(ret), ret.getAnalogOutput, ret.getAnalogOutput)
-	--[[
-	setmetatable(ret.output, {
-	__call = function(self, side) return ret.getAnalogOutput(this_library.SIDES[side]) end,
-	__index = function(self, side) return ret.getOutput(this_library.SIDES[side]) end,
-	__newindex = function(self, side, value)
-		if getset.STRING_TO_BOOLEAN(value) ~= nil then
-			ret.setOutput(this_library.SIDES[side], getset.STRING_TO_BOOLEAN(value))
-		else
-			ret.setAnalogOutput(this_library.SIDES[side], tonumber(value))
-		end
-	end,
-	__pairs = function(self) -- Return relatives
-		local i = 0
-		local key, value
-		return function()
-			i = i + 1
-			key = this_library.SIDES[i]
-			if i > 6 then return nil, nil end
-			value = ret.getAnalogOutput(key)
-			return key, value
-		end
-	end,
-	__ipairs = function(self) -- Return cardinals
-		local i = 6
-		local key, value
-		return function()
-			i = i + 1
-			key = this_library.SIDES[i]
-			if i > 12 then return nil, nil end
-			value = ret.getAnalogOutput(key)
-			return key, value
-		end
-	end,
-	})]]
-	ret.__getter = {}
-	ret.__setter = {}
+	self.output = getset.metaSide({}, self.getOutput, outputParser(self), self.getAnalogOutput, self.getAnalogOutput)
 	
-	setmetatable(ret, {
+	self.__getter = {}
+	self.__setter = {}
+	
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Redstone Integrator '%s'", self.name, self.block)
+			return string.format("%s '%s'", self.type, self.name, self.block)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.RedstoneIntegrator=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:RedstoneIntegrator()
+	if not Peripheral.default then
+		Peripheral()
 	end
 end
 
-function this_library.getInput(side)
+function lib.getInput(side)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getInput(side)
+	return Peripheral.default.getInput(side)
 end
-function this_library.getOutput(side)
+function lib.getOutput(side)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getOutput(side)
+	return Peripheral.default.getOutput(side)
 end
-function this_library.getAnalogInput(side)
+function lib.getAnalogInput(side)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getAnalogInput(side)
+	return Peripheral.default.getAnalogInput(side)
 end
-function this_library.getAnalogOutput(side)
+function lib.getAnalogOutput(side)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.getAnalogOutput(side)
+	return Peripheral.default.getAnalogOutput(side)
 end
-function this_library.setOutput(side, powered)
+function lib.setOutput(side, powered)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.setOutput(side, powered)
+	return Peripheral.default.setOutput(side, powered)
 end
-function this_library.setAnalogOutput(side, powered)
+function lib.setAnalogOutput(side, powered)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.setAnalogOutput(side, powered)
+	return Peripheral.default.setAnalogOutput(side, powered)
 end
 
-return this_library
+return lib

@@ -1,6 +1,6 @@
 --[[
 	GetSet Utility library by PavelKom.
-	Version: 0.1
+	Version: 0.5
 	Easy access to getter and setter function without calling.
 	Fields staring with __ is private (like in Python)
 	Example:
@@ -8,24 +8,24 @@
 	getset = require 'getset_util'
 	
 	function lib:TestClassObject()
-		local ret = {__a = 5, __b = 7, __c = 9, test = function() print('test') end, d = 7}
+		local self = {__a = 5, __b = 7, __c = 9, test = function() print('test') end, d = 7}
 		...
-		ret.__getter = {
-			a = function() return ret.__a end,
-			b  = function() return ret.__b end,
+		self.__getter = {
+			a = function() return self.__a end,
+			b  = function() return self.__b end,
 			__e = function() return true end
 		}
-		ret.__setter = {
-			a = function(value) ret.__a = value end,
-			c = function(value) ret.__c = value end
+		self.__setter = {
+			a = function(value) self.__a = value end,
+			c = function(value) self.__c = value end
 		}
 		...
-		setmetatable(ret, {
+		setmetatable(self, {
 			__index = getset.GETTER,
 			__newindex = getset.SETTER,
 			__pairs = getset.PAIRS,
 			__ipairs = getset.IPAIRS,})
-		return ret
+		return self
 	end
 	
 	test = lib:TestClassObject()
@@ -56,23 +56,46 @@
 	
 ]]
 
+patches = require 'patches'
+local lib = {}
 
-local this_library = {}
+-- Not working
+lib.CALLER = function(func)
+	return function(_,...) func(...) end
+end
+lib.CUSTOM_TYPE = function(name)
+	return function(self) return name end
+end
 
+lib.VALIDATE_PERIPHERAL = function(name, peripheral_type, peripheral_name, peripheral_table)
+	-- Wrap or find peripheral
+	local object = name and peripheral.wrap(name) or peripheral.find(peripheral_type)
+	if object == nil then error("Can't connect to "..peripheral_name.." '"..name or peripheral_type.."'") end
+	-- If it already registered, return 
+	if peripheral_table.__items[peripheral.getName(object)] then
+		return nil, peripheral_table.__items[peripheral.getName(object)]
+	end
+	-- Test for miss-type
+	_type = peripheral.getType(object)
+	if _type ~= peripheral_type then error("Invalid peripheral type. Expect '"..peripheral_type.."' Present '".._type.."'") end
+	_name = peripheral.getName(object)
+	
+	return {object=object, name=_name, type=_type}, nil
+end
 
-this_library.GETTER = function(self, index)
+lib.GETTER = function(self, index)
 	if not self.__getter or not self.__getter[index] then
 		error("Can't get value from '"..tostring(index).."'")
 	end
 	return self.__getter[index]()
 end
-this_library.SETTER = function(self, index, value)
+lib.SETTER = function(self, index, value)
 	if not self.__setter or not self.__setter[index] then
 		error("Can't set value to '"..tostring(index).."'")
 	end
 	self.__setter[index](value)
 end
-this_library.PAIRS = function(self)
+lib.PAIRS = function(self)
 	local key, value, k2, k3
 	local names = {'method','getter','setter',}
 	return function()
@@ -113,7 +136,7 @@ this_library.PAIRS = function(self)
 		return key, value
 	end
 end
-this_library.IPAIRS = function(self)
+lib.IPAIRS = function(self)
 	local key, value, k2, v2
 	local keys = {}
 	k2, v2 = next(self)
@@ -146,24 +169,27 @@ this_library.IPAIRS = function(self)
 		return key, value
 	end
 end
-this_library.EQ_PERIPHERAL = function(self, other)
+lib.EQ_PERIPHERAL = function(self, other)
 	return self.name == other.name and self.type == other.type
 end
-function this_library.GETTER_TO_UPPER(default)
+lib.GETTER_TO_UPPER = function(default)
 	return function(self, index)
 		if tostring(index) == string.upper(tostring(index)) then return default end
 		return self[string.upper(tostring(index))]
 	end
 end
-function this_library.GETTER_TO_LOWER(default)
+lib.GETTER_TO_LOWER = function(default)
 	return function(self, index)
 		if tostring(index) == string.lower(tostring(index)) then return default end
 		return self[string.lower(tostring(index))]
 	end
 end
 
-this_library.STRING_TO_BOOLEAN = { ["true"]=true, ["false"]=false }
-setmetatable(this_library.STRING_TO_BOOLEAN, {
+lib.STRING_TO_BOOLEAN = {
+	["true"]=true,["t"]=true,["yes"]=true,["y"]=true,
+	["false"]=false,["f"]=false,["no"]=false,["n"]=false,
+}
+setmetatable(lib.STRING_TO_BOOLEAN, {
 	__call = function(self, value)
 		if type(value) == 'boolean' then
 			return value
@@ -175,25 +201,27 @@ setmetatable(this_library.STRING_TO_BOOLEAN, {
 
 
 -- Relative and cardinal directions
-this_library.SIDES = {'right','left','front','back','top','bottom','north','south','east','west','up','down',}
+lib.SIDES = {'right','left','front','back','top','bottom','north','south','east','west','up','down',}
 -- add .RIGHT, .NORTH, ... and .SIDES.RIGHT .CARDINAL.NORTH, ...
-for k,v in ipairs(this_library.SIDES) do
-	this_library[string.upper(v)] = v
-	this_library.SIDES[string.upper(v)] = v
-	--this_library.SIDES[k] = nil
+for k,v in ipairs(lib.SIDES) do
+	lib[string.upper(v)] = v
+	lib.SIDES[string.upper(v)] = v
+	--lib.SIDES[k] = nil
 end
-setmetatable(this_library.SIDES, {__index = this_library.GETTER_TO_UPPER(this_library.SIDES.UP)})
+setmetatable(lib.SIDES, {__index = lib.GETTER_TO_UPPER(lib.SIDES.UP)})
 
-function this_library.metaSide(tbl, getter, setter, caller, pair)
+lib.metaSide = function(getter, setter, caller, pair)
 	local meta = {
-	__index = function(self, side) return getter(this_library.SIDES[side]) end}
+	__index = function(self, side)
+		return getter(lib.SIDES[side])
+	end}
 	if pair then
 		meta.__pairs = function(self) -- Return relatives
 			local i = 0
 			local key, value
 			return function()
 				i = i + 1
-				key = this_library.SIDES[i]
+				key = lib.SIDES[i]
 				if i > 6 then return nil, nil end
 				value = pair(key)
 				return key, value
@@ -204,25 +232,132 @@ function this_library.metaSide(tbl, getter, setter, caller, pair)
 			local key, value
 			return function()
 				i = i + 1
-				key = this_library.SIDES[i]
+				key = lib.SIDES[i]
 				if i > 12 then return nil, nil end
-				value = pair(key)
+				value = wrapper.object[pair](key)
 				return key, value
 			end
 		end
 	end
 	if caller then
-		meta.__call = function(self, side) return caller(this_library.SIDES[side]) end
+		meta.__call = function(self, side)
+			return caller(lib.SIDES[side])
+		end
 	end
 	if setter then
 		meta.__newindex = function(self, side, value)
-			setter(this_library.SIDES[side], value)
+			setter(lib.SIDES[side], value)
 		end
 	end
-	return setmetatable(tbl, meta)
+	return setmetatable({}, meta)
 end
 
-function this_library.printTable(tbl,ignore_functions, deep)
+
+lib.metaPos = function(getter, setter)
+	local meta = {
+	__index = function(self, index)
+		local _x, _y = getter()
+		if string.lower(tostring(index)) == 'x' or index == 1 then
+			return _x
+		elseif string.lower(tostring(index)) == 'y' or index == 2 then
+			return _y
+		elseif string.lower(tostring(index)) == 'xy' or index == 3 then
+			return _x, _y
+		end
+	end}
+	if setter then
+		meta.__newindex = function(self, index, value)
+			local _x, _y = getter()
+			if string.lower(tostring(index)) == 'x' or index == 1 then
+				setter(tonumber(value), _y)
+			elseif string.lower(tostring(index)) == 'y' or index == 2 then
+				setter(_x, tonumber(value))
+			elseif string.lower(tostring(index)) == 'xy' or index == 3 then
+				if value == nil then
+					setter(1,1)
+				else
+					setter(tonumber(value[1]) or tonumber(value.x) or 1,
+						tonumber(value[2]) or tonumber(value.y) or 1)
+				end
+			end
+		end
+		meta.__call = function(self, x_tbl, y)
+			local _x, _y = getter()
+			if type(x_tbl) == 'table' or (x_tbl == nil and y == nil) then
+				self.xy = x_tbl
+			elseif x_tbl ~= nil and y ~= nil then
+				self.xy = {x_tbl, y}
+			elseif x_tbl ~= nil and y == nil then
+				self.x = x_tbl
+			elseif x_tbl == nil and y ~= nil then
+				self.y = y
+			end
+		end
+	end
+	return setmetatable({}, meta)
+end
+
+lib.metaPalette = function(getter, setter)
+	local meta = {
+		__index = function(self, index)
+			if type(index) == 'string' then
+				index = colors[index]
+			end
+			return colors.packRGB(getter(index))
+		end,
+		__pairs = function(self)
+			local key, value
+			local i = 0
+			return function()
+				if i > 15 then return nil, nil end
+				key = math.pow(2,i)
+				value = {getter(key)} -- 0.0-1.0 RGB
+				--v = colors.absRGB(getter(key)) -- 0-255 RGB
+				value[4] = colors.packRGB(table.unpack(value)) -- hex
+				--value[5] = v[1], value[6] = v[2], value[7] = v[3]
+				i = i + 1
+				return key, value
+			end
+		end
+	}
+	meta.__ipairs = meta.__pairs
+	if setter then
+		meta.__newindex = function(self, index, value) -- value is Hex or {rgb}
+			if type(index) == 'string' then
+				index = colors[index]
+			end
+			if index == 0 or index == nil then error("getset.metaPalette Invalid color index") end
+			if type(value) == 'table' then
+				-- RGB. Allow changing only one or two channels
+				local _r, _g, _b = getter(value)
+				setter(index,
+					value[1] or value.r or _r,
+					value[2] or value.g or _g,
+					value[3] or value.b or _b)
+			-- Value hex number or string
+			elseif type(value) == 'string' then
+				setter(index, tonumber(value,16))
+			else
+				setter(index, value)
+			end
+		end
+		meta.__call = function(self, color_tbl, r_hex, g, b)
+			if type(color_tbl) == 'table' then -- Multicolor change
+				for k, v in pairs(color_tbl) do
+					self[k] = v
+				end
+			-- Hex string
+			elseif type(r_hex) == 'string' then
+				self[color_tbl] = r_hex
+			else -- RGB
+				self[color_tbl] = {r_hex, g, b}
+			end
+		end
+	end
+	return setmetatable({}, meta)
+end
+
+lib.printTable = function(tbl,ignore_functions, deep)
 	if type(tbl) ~= 'table' then
 		print(tbl)
 	else
@@ -233,7 +368,7 @@ function this_library.printTable(tbl,ignore_functions, deep)
 				print(string.format("%s%s:%s    %s", deep,tostring(k), tostring(v), type(v)))
 			else
 				print(string.format("%s%s:",deep,tostring(k)))
-				this_library.printTable(v, ignore_functions, deep.." ")
+				lib.printTable(v, ignore_functions, deep.." ")
 			end
 			end
 		end
@@ -242,7 +377,7 @@ end
 
 
 
-this_library.GETTER2 = function(cls)
+lib.GETTER2 = function(cls)
 	return function(self, index)
 		if self.__getter and self.__getter[index] then -- internal/class object getter
 			return self.__getter[index]()
@@ -254,7 +389,7 @@ this_library.GETTER2 = function(cls)
 		error("Can't get value from '"..tostring(cls)..'().'..tostring(index).."'")
 	end
 end
-this_library.SETTER2 = function(cls)
+lib.SETTER2 = function(cls)
 	return function(self, index, value)
 		if not self.__setter or not self.__setter[index] then
 			return self.__setter[index](value)
@@ -264,7 +399,7 @@ this_library.SETTER2 = function(cls)
 		error("Can't set value to '"..tostring(cls)..'().'..tostring(index).."'")
 	end
 end
-this_library.PAIRS2 = function(cls)
+lib.PAIRS2 = function(cls)
 	return function(self)
 		local key, value, k2, k3
 		local names = {'method','getter','setter',}
@@ -337,7 +472,7 @@ this_library.PAIRS2 = function(cls)
 		end
 	end
 end
-this_library.IPAIRS2 = function(cls)
+lib.IPAIRS2 = function(cls)
 	return function(self)
 		local key, value, k2, v2
 		local keys = {}
@@ -386,6 +521,22 @@ this_library.IPAIRS2 = function(cls)
 		end
 	end
 end
+function lib.formattedTable(tbl)
+	local result="{"
+	for k, v in pairs(tbl) do
+		if type(k) ~= 'table' and type(v) ~= 'table' then
+			result = result..tostring(k).."="..tostring(v)..","
+		elseif type(k) ~= 'table' and type(v) == 'table' then
+			result = result..tostring(k).."="..formattedTable(v)..","
+		elseif type(k) == 'table' and type(v) ~= 'table' then
+			result = result..formattedTable(k).."="..tostring(v)..","
+		else
+			result = result..formattedTable(k).."="..formattedTable(v)..","
+		end
+	end
+	result = result.."}"
+	return result
+end
 
 
 
@@ -399,6 +550,4 @@ end
 
 
 
-
-
-return this_library
+return lib

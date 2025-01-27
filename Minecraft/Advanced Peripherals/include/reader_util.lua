@@ -1,72 +1,74 @@
 --[[
 	Block Reader Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Block Reader
 	https://advancedperipherals.netlify.app/peripherals/block_reader/
 	ToDo: Add manual
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
-
--- Peripheral
-function this_library:BlockReader(name)
-	local def_type = 'blockReader'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Block Reader '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local lib = {}
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'blockReader', 'Block Reader', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.__getter = {
-		block = function() return ret.object.getBlockName() end,
-		data = function() return ret.object.getBlockData() end,
-		states = function() return ret.object.getBlockStates() end,
-		tile = function() return ret.object.isTileEntity() end,
+	self.__getter = {
+		block = function() return self.object.getBlockName() end,
+		data = function() return self.object.getBlockData() end,
+		states = function() return self.object.getBlockStates() end,
+		tile = function() return self.object.isTileEntity() end,
 	}
-	ret.getBlockName = ret.__getter.name
-	ret.getBlockData = ret.__getter.data
-	ret.getBlockStates = ret.__getter.states
-	ret.isTileEntity = ret.__getter.tile
+	self.getBlockName = self.__getter.block
+	self.getBlockData = self.__getter.data
+	self.getBlockStates = self.__getter.states
+	self.isTileEntity = self.__getter.tile
 	
-	ret.__setter = {}
-	setmetatable(ret, {
+	self.__setter = {}
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Block Reader '%s' Current block: '%s'", self.name, self.block)
+			return string.format("%s '%s' Current block: '%s'", self.type, self.name, self.block)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.BlockReader=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:BlockReader()
+	if not Peripheral.default then
+		Peripheral()
 	end
 end
 
-function this_library.getBlockName()
+function lib.getBlockName()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.block
+	return Peripheral.default.block
 end
-this_library.getBlock = this_library.getBlockName
-function this_library.getBlockData()
+lib.getBlock = lib.getBlockName
+function lib.getBlockData()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.data
+	return Peripheral.default.data
 end
-this_library.getData = this_library.getBlockData
-function this_library.getBlockStates()
+lib.getData = lib.getBlockData
+function lib.getBlockStates()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.states
+	return Peripheral.default.states
 end
-this_library.getStates = this_library.getBlockStates
-function this_library.isTileEntity()
+lib.getStates = lib.getBlockStates
+function lib.isTileEntity()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.isTile
+	return Peripheral.default.isTile
 end
-this_library.isTile = this_library.isTileEntity
+lib.isTile = lib.isTileEntity
 
-return this_library
+return lib

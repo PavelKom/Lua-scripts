@@ -1,73 +1,74 @@
 --[[
 	Colony Integrator Utility library by PavelKom.
-	Version: 0.6
+	Version: 0.6.5
 	Wrapped Colony Integrator
 	https://advancedperipherals.netlify.app/peripherals/colony_integrator/
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
-
--- Peripheral
-function this_library:ColonyIntegrator(name)
-	local def_type = 'colonyIntegrator'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Colony Integrator '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local lib = {}
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'colonyIntegrator', 'Colony Integrator', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.__getter = {
-		citizens = function() return ret.object.getCitizens() end,
-		visitors = function() return ret.object.getVisitors() end,
-		buildings = function() return ret.object.getBuildings() end,
-		research = function() return ret.object.getResearch() end,
-		requests = function() return ret.object.getRequests() end,
-		orders = function() return ret.object.getWorkOrders() end,
-		colonyID = function() return ret.object.getColonyID() end,
-		colonyName = function() return ret.object.getColonyName() end,
-		colonyStyle = function() return ret.object.getColonyStyle() end,
-		location = function() return ret.object.getLocation() end,
-		happiness = function() return ret.object.getHappiness() end,
-		isActive = function() return ret.object.isActive() end,
-		isUnderAttack = function() return ret.object.isUnderAttack() end,
-		isInColony = function() return ret.object.isInColony() end,
-		num = function() return ret.object.amountOfCitizens() end,
-		max = function() return ret.object.maxOfCitizens() end,
-		graves = function() return ret.object.amountOfGraves() end,
-		sites = function() return ret.object.amountOfConstructionSites() end,
+	self.__getter = {
+		citizens = function() return self.object.getCitizens() end,
+		visitors = function() return self.object.getVisitors() end,
+		buildings = function() return self.object.getBuildings() end,
+		research = function() return self.object.getResearch() end,
+		requests = function() return self.object.getRequests() end,
+		orders = function() return self.object.getWorkOrders() end,
+		colonyID = function() return self.object.getColonyID() end,
+		colonyName = function() return self.object.getColonyName() end,
+		colonyStyle = function() return self.object.getColonyStyle() end,
+		location = function() return self.object.getLocation() end,
+		happiness = function() return self.object.getHappiness() end,
+		isActive = function() return self.object.isActive() end,
+		isUnderAttack = function() return self.object.isUnderAttack() end,
+		isInColony = function() return self.object.isInColony() end,
+		num = function() return self.object.amountOfCitizens() end,
+		max = function() return self.object.maxOfCitizens() end,
+		graves = function() return self.object.amountOfGraves() end,
+		sites = function() return self.object.amountOfConstructionSites() end,
 	}
-	ret.__getter.id = ret.__getter.colonyID
-	ret.__getter.style = ret.__getter.colonyStyle
-	ret.__getter.loc = ret.__getter.location
-	ret.__getter.pos = ret.__getter.location
-	ret.__getter.happy = ret.__getter.happiness
-	ret.__getter.attacked = ret.__getter.isUnderAttack
-	ret.__getter.inside = ret.__getter.isInColony
+	self.__getter.id = self.__getter.colonyID
+	self.__getter.style = self.__getter.colonyStyle
+	self.__getter.loc = self.__getter.location
+	self.__getter.pos = self.__getter.location
+	self.__getter.happy = self.__getter.happiness
+	self.__getter.attacked = self.__getter.isUnderAttack
+	self.__getter.inside = self.__getter.isInColony
+	self.__setter = {}
 	
-	ret.ordersResources = function(workOrderId) return ret.object.getWorkOrderResources(workOrderId) end
-	ret.builderResources = function(position) return ret.object.getBuilderResources(position) end
-	ret.isWithin = function(position) return ret.object.isWithin(position) end
+	self.ordersResources = function(workOrderId) return self.object.getWorkOrderResources(workOrderId) end
+	self.builderResources = function(position) return self.object.getBuilderResources(position) end
+	self.isWithin = function(position) return self.object.isWithin(position) end
 	
-	ret.__setter = {}
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Colony Integrator '%s'", self.name)
+			return string.format("%s '%s'", self.type, self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.ColonyIntegrator=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:ColonyIntegrator()
+	if not Peripheral.default then
+		Peripheral()
 	end
 end
 
-return this_library
+return lib

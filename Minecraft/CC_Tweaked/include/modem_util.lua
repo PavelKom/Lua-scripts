@@ -1,21 +1,85 @@
 --[[
 	Modem Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Drive
 	https://tweaked.cc/peripheral/modem.html
 	TODO: Add manual
 ]]
 
 getset = require 'getset_util'
+local lib = {}
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'modem', 'Modem', Peripheral)
+	if wrapped ~= nil then return wrapped end
+	self.__getter = {
+		wireless = function() return self.object.isWireless() end,
+		namesRemote = function()
+			if self.wireless then error("Modem.namesRemote allowed only for wired modems") end
+			return self.object.getNamesRemote() end,
+		nameLocal = function()
+			if self.wireless then error("Modem.nameLocal allowed only for wired modems") end
+			return self.object.getNameLocal() end,
+	}
+	self.open = function(channel) return pcall(self.object.open,channel) end
+	self.isOpen = function(channel)
+		local res, err = pcall(self.object.isOpen,channel)
+		return res and err or res, err
+	end
+	self.close = function(channel)
+		if channel then return pcall(self.object.close,channel) end
+		self.object.closeAll()
+	end
+	self.transmit = function(channel, replyChannel, payload) return pcall(self.object.transmit,channel, replyChannel, payload) end
+	self.isPresent = function(name)
+		if self.wireless then error("Modem.isPresent allowed only for wired modems") end
+		return self.object.isPresentRemote(name) end
+	self.getType = function(name)
+		if self.wireless then error("Modem.getType allowed only for wired modems") end
+		return self.object.getTypeRemote(name) end
+	self.hasType = function(name, _type)
+		if self.wireless then error("Modem.hasType allowed only for wired modems") end
+		return self.object.hasTypeRemote(name, _type) end
+	self.methods = function(name)
+		if self.wireless then error("Modem.methods allowed only for wired modems") end
+		return self.object.getMethodsRemote(name) end
+	self.call = function(remoteName, method, ...)
+		if self.wireless then error("Modem.call allowed only for wired modems") end
+		return self.object.callRemote(remoteName, method, ...) end
+	
+	self.__setter = {}
+	setmetatable(self, {
+		__index = getset.GETTER, __newindex = getset.SETTER, 
+		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
+		__tostring = function(self)
+			return string.format("%s '%s'", self.type, self.name)
+		end,
+		__eq = getset.EQ_PERIPHERAL
+	})
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
+end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.Modem=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
+
+function testDefaultPeripheral()
+	if not Peripheral.default then
+		Peripheral()
+	end
+end
+
 -- Events
-function this_library.waitModemMessageEvent()
+function lib.waitModemMessageEvent()
 	--event, side, channel, reply, message, distance
 	return os.pullEvent("modem_message")
 end
-function this_library.waitModemMessageEventEx(func)
+function lib.waitModemMessageEventEx(func)
 	--[[
 	Create semi-infinite loop for modem_message event listener
 	func - callback function. Must have arguments:
@@ -38,48 +102,4 @@ function this_library.waitModemMessageEventEx(func)
 	end
 end
 
--- Peripheral
-function this_library:Modem(name)
-	local def_type = 'modem'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Modem '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {
-		wireless = function() return ret.object.isWireless() end,
-		namesRemote = function() return ret.object.getNamesRemote() end,
-		nameLocal = function() return ret.object.getNameLocal() end,
-	}
-	ret.open = function(channel) return pcall(ret.object.open,channel) end
-	ret.isOpen = function(channel)
-		local res, err = pcall(ret.object.isOpen,channel)
-		return res and err or res, err
-	end
-	ret.close = function(channel) 
-		if channel then return pcall(ret.object.close,channel) end
-		ret.object.closeAll()
-	end
-	ret.transmit = function(channel, replyChannel, payload) return pcall(ret.object.transmit,channel, replyChannel, payload) end
-	ret.isPresent = function(name) return ret.object.isPresentRemote(name) end
-	ret.getType = function(name) return ret.object.getTypeRemote(name) end
-	ret.hasType = function(name, _type) return ret.object.hasTypeRemote(name, _type) end
-	ret.methods = function(name) return ret.object.getMethodsRemote(name) end
-	ret.call = function(remoteName, method, ...) return ret.object.callRemote(remoteName, method, ...) end
-	
-	ret.__setter = {}
-	setmetatable(ret, {
-		__index = getset.GETTER, __newindex = getset.SETTER, 
-		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
-		__tostring = function(self)
-			return string.format("Modem '%s'", self.name)
-		end,
-		__eq = getset.EQ_PERIPHERAL
-	})
-	
-	return ret
-end
-
-
-return this_library
+return lib

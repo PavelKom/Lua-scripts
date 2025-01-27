@@ -1,6 +1,6 @@
 --[[
 	Speaker Utility library by PavelKom.
-	Version: 0.7
+	Version: 0.7.5
 	Wrapped Printer
 	https://tweaked.cc/peripheral/monitor.html
 	TODO: Add manual
@@ -10,83 +10,93 @@
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.DEFAULT_STRESSOMETER = nil
+local lib = {}
 
-this_library.INSTRUMENTS = {"harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar", "chime", "xylophone", "iron_xylophone", "cow_bell", "didgeridoo", "bit", "banjo", "pling"}
-for k,v in pairs(this_library.INSTRUMENTS) do
-	this_library.INSTRUMENTS[string.upper(v)] = v
+lib.INSTRUMENTS = {"harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar", "chime", "xylophone", "iron_xylophone", "cow_bell", "didgeridoo", "bit", "banjo", "pling"}
+for k,v in pairs(lib.INSTRUMENTS) do
+	lib.INSTRUMENTS[string.upper(v)] = v
 end
-setmetatable(this_library.INSTRUMENTS, {__index = getset.GETTER_TO_UPPER(this_library.INSTRUMENTS.BASS)})
+setmetatable(lib.INSTRUMENTS, {__index = getset.GETTER_TO_UPPER(lib.INSTRUMENTS.BASS)})
 
-function this_library:Speaker(name)
-	local def_type = 'speaker'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Speaker '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-
-	ret.__getter = {}
-	ret.__setter = {}
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'speaker', 'Speaker', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.note = function(instrument, volume, pitch) 
-		--local res, err = pcall(ret.object.playNote, this_library.INSTRUMENTS[instrument], volume, pitch)
+	self.__getter = {}
+	self.__setter = {}
+	
+	self.note = function(instrument, volume, pitch) 
+		--local res, err = pcall(self.object.playNote, lib.INSTRUMENTS[instrument], volume, pitch)
 		--return res and err or res, err
-		return ret.object.playNote(this_library.INSTRUMENTS[instrument], volume, pitch)
+		return self.object.playNote(lib.INSTRUMENTS[instrument], volume, pitch)
 	end
-	ret.sound = function(name, volume, pitch)
-		--local res, err = pcall(ret.object.playSound, name, volume, pitch)
+	self.sound = function(name, volume, pitch)
+		--local res, err = pcall(self.object.playSound, name, volume, pitch)
 		--return res and err or res, err
-		return ret.object.playSound(name, volume, pitch)
+		return self.object.playSound(name, volume, pitch)
 	end
-	ret.audio = function(audio, volume) 
-		local res, err = pcall(ret.object.playAudio, audio, volume)
+	self.audio = function(audio, volume) 
+		local res, err = pcall(self.object.playAudio, audio, volume)
 		return res and err or res, err
 	end
-	ret.stop = function() ret.object.stop() end
+	self.stop = function() self.object.stop() end
 
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Speaker '%s'", self.name)
+			return string.format("%s '%s'", self.type, self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
+end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.Speaker=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
+
+function testDefaultPeripheral()
+	if not Peripheral.default then
+		Peripheral()
+	end
 end
 
-function.this_library:Speakers()
+function.lib:Speakers()
 	local def_type = 'speaker'
 	local _speakers = {peripheral.find(def_type)}
 	if #_speakers == 0 then error("Can't find any Speaker") end
-	local ret = {speakers={}}
+	local self = {speakers={}}
 	for _,s in pairs(_speaker) do
-		ret.speakers[#ret.speakers+1]=this_library:Speaker(peripheral.getName(s))
+		self.speakers[#self.speakers+1]=lib:Speaker(peripheral.getName(s))
 	end
 	
-	ret.__getter = {}
-	ret.__setter = {}
+	self.__getter = {}
+	self.__setter = {}
 	
-	ret.note = function(instrument, volume, pitch)
-		for _, s in pairs(ret.speaker) do
-			pcall(s.note,this_library.INSTRUMENTS[instrument], volume, pitch)
+	self.note = function(instrument, volume, pitch)
+		for _, s in pairs(self.speaker) do
+			pcall(s.note,lib.INSTRUMENTS[instrument], volume, pitch)
 		end
 	end
-	ret.sound = function(name, volume, pitch)
-		for _, s in pairs(ret.speaker) do
+	self.sound = function(name, volume, pitch)
+		for _, s in pairs(self.speaker) do
 			pcall(s.sound,name, volume, pitch)
 		end
 	end
-	ret.audio = function(audio, volume)
-		for _, s in pairs(ret.speaker) do
+	self.audio = function(audio, volume)
+		for _, s in pairs(self.speaker) do
 			pcall(s.audio,audio, volume)
 		end
 	end
-	ret.stop = function() ret.object.stop() end
+	self.stop = function() self.object.stop() end
 
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
@@ -94,20 +104,20 @@ function.this_library:Speakers()
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	return ret
+	return self
 end
 
-function this_library:BoomBox()
-	local ret = {playlist={}}
-	ret.speakers=this_library:Speakers()
-	ret.soundlist = this_library:SoundList()
+function lib:BoomBox()
+	local self = {playlist={}}
+	self.speakers=lib:Speakers()
+	self.soundlist = lib:SoundList()
 	local current_track = ""
 	local duration = 0
-	ret.__getter = {
+	self.__getter = {
 		track = function() return current_track end,
 		duration = function() return duration end,
 	}
-	ret.__setter = {
+	self.__setter = {
 	}
 	
 	
@@ -115,7 +125,7 @@ function this_library:BoomBox()
 	
 	
 	
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
@@ -123,11 +133,11 @@ function this_library:BoomBox()
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	return ret
+	return self
 end
 
 
-function this_library.subfolders(tbl, path_tbl, original_path)
+function lib.subfolders(tbl, path_tbl, original_path)
 	if #path_tbl == 0 then
 		tbl.name = original_path
 		return
@@ -135,7 +145,7 @@ function this_library.subfolders(tbl, path_tbl, original_path)
 	local _p = path_tbl[1]
 	tbl[_p] = tbl[_p] or {}
 	table.remove(path_tbl,1)
-	this_library.subfolders(tbl[_p], path_tbl, original_path)
+	lib.subfolders(tbl[_p], path_tbl, original_path)
 end
 
 --[[
@@ -153,45 +163,45 @@ Goto .minecraft/assets/objects/a1 (a1 the first two characters in hash).
 Copy a1daff5daa55f870c29becece97fc88e3da0b18e file to computer folder, rename (like sounds.json)
 Create  SoundList() object, it's autogenerate sounds.txt
 ]]
-function this_library:SoundList()
-	local ret = {files = {}, paths = {}}
+function lib:SoundList()
+	local self = {files = {}, paths = {}}
 	
-	ret.__getter = {
-		count = function() return #ret.files end,
+	self.__getter = {
+		count = function() return #self.files end,
 	}
-	ret.__setter = {}
+	self.__setter = {}
 	
-	ret.reload = function(path)
+	self.reload = function(path)
 		path = path or 'sounds.txt'
 		local _file = io.open(path,'r')
 		if _file == nil then
-			this_library.generateSoundList(_, path)
+			lib.generateSoundList(_, path)
 			_file = io.open(path,'r')
 		end
 		if _file == nil then
 			error("[SoundList] Can't read sounds.txt\nRead speaker_util manual for fix this problem")
 		end
-		while #ret.files > 0 do table.remove(ret.files) end
+		while #self.files > 0 do table.remove(self.files) end
 		for line in _file:lines() do
-			ret.files[#ret.files+1] = line
+			self.files[#self.files+1] = line
 			
 		end
 		_file:close()
 	end
 	-- Get all sounds like tables [path][to][file].name = path.to.file
-	ret.tree = function()
-		if ret.paths and #ret.paths > 0 then return ret.paths end
-		for _, file in pairs(ret.files) do
-			this_library.subfolders(ret.paths, string.split(file, '.'), file)
+	self.tree = function()
+		if self.paths and #self.paths > 0 then return self.paths end
+		for _, file in pairs(self.files) do
+			lib.subfolders(self.paths, string.split(file, '.'), file)
 		end
-		return ret.paths
+		return self.paths
 	end
 	
-	ret.dir = function(path)
+	self.dir = function(path)
 		path = path or ''
-		if not ret.paths then ret.tree() end
+		if not self.paths then self.tree() end
 		local _path = string.split(path, '.') or {}
-		local _tbl = table.copy(ret.paths)
+		local _tbl = table.copy(self.paths)
 		while #_path > 0 do
 			if not _tbl[_path[1]] then error('Invalid path') end
 			_tbl = _tbl[_path[1]]
@@ -206,11 +216,11 @@ function this_library:SoundList()
 		return _d, _f
 	end
 	
-	ret.filter = function(path, regex)
+	self.filter = function(path, regex)
 		path = path or ''
 		if not regex then path = string.gsub(path, '%.', '[.]') end
 		local _result = {}
-		for _,v in pairs(ret.files) do
+		for _,v in pairs(self.files) do
 			if string.find(v,path) then
 				_result[#_result+1] = v
 			end
@@ -218,8 +228,8 @@ function this_library:SoundList()
 		return _result
 	end
 	
-	ret.reload()
-	setmetatable(ret, {
+	self.reload()
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
@@ -228,11 +238,11 @@ function this_library:SoundList()
 		__eq = getset.EQ_PERIPHERAL
 	})
 	
-	return ret
+	return self
 end
 
 
-function this_library.generateSoundList(path, path2)
+function lib.generateSoundList(path, path2)
 	print('Gen')
 	path = path or 'sounds.json'
 	path2 = path2 or 'sounds.txt'
@@ -251,45 +261,4 @@ function this_library.generateSoundList(path, path2)
 	soundlist:close()
 end
 
-
-
--- Experimental
-local peripheral_type = 'speaker'
-local peripheral_name = 'Speaker'
-local Peripheral = {}
-Peripheral.__items = {}
-Peripheral.note = function(obj) return function(instrument, volume, pitch) obj.object.playNote(this_library.INSTRUMENTS[instrument], volume, pitch) end end
-Peripheral.sound = function(obj) return function(name, volume, pitch) obj.object.playSound(name, volume, pitch) end end
-Peripheral.audio = function(obj) return function(audio, volume)
-	local res, err = pcall(obj.object.playAudio, audio, volume)
-	return res and err or res, err
-end end
-Peripheral.stop = function(obj) return function() obj.object.stop() end end
-Peripheral.new = function(name)
-	-- Wrap or find peripheral
-	local object = name and peripheral.wrap(name) or peripheral.find(peripheral_type)
-	if object == nil then error("Can't connect to "+peripheral_name+" '"..name or peripheral_type.."'") end
-	-- If it already registered, return 
-	if Peripheral.__items[peripheral.getName(object)] then
-		return Peripheral.__items[peripheral.getName(object)]
-	end
-	-- Test for miss-type
-	_name = peripheral.getName(object)
-	_type = peripheral.getType(object)
-	if _type ~= peripheral_type then error("Invalid peripheral type. Expect '"..peripheral_type.."' Present '"..type.."'") end
-
-	setmetatable(self, {
-		__index = getset.GETTER2(Peripheral), __newindex = getset.SETTER2(Peripheral), 
-		__pairs = getset.PAIRS2(Peripheral), __ipairs = getset.IPAIRS2(Peripheral),
-		__tostring = function(self)
-			return string.format("%s '%s'", peripheral_name, self.name)
-		end,
-		__eq = getset.EQ_PERIPHERAL
-	})
-	Peripheral.__items[_name] = self
-	if not Peripheral.default then Peripheral.default = self end
-	return self
-end
-this_library.Speaker_Ex = Peripheral
-
-return this_library
+return lib

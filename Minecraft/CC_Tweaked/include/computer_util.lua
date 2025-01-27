@@ -1,49 +1,55 @@
 --[[
 	Computer Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped Computer
 	https://tweaked.cc/peripheral/computer.html
 	TODO: Add manual
 ]]
 
 getset = require 'getset_util'
+local lib = {}
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
-
--- Peripheral
-function this_library:Computer(name)
-	local def_type = 'computer'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Computer '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {
-		isOn = function() return ret.object.isOn() end,
-		label = function() return ret.object.getLabel() end,
-		id = function() return ret.object.getID() end,
+local Peripheral = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'computer', 'Computer', Peripheral)
+	if wrapped ~= nil then return wrapped end
+	self.__getter = {
+		isOn = function() return self.object.isOn() end,
+		label = function() return self.object.getLabel() end,
+		id = function() return self.object.getID() end,
 	}
+	self.__setter = {}
 	
-	ret.turnOn = function() ret.object.turnOn() end
-	ret.on = ret.turnOn
-	ret.shutdown = function() ret.object.shutdown() end
-	ret.off = ret. shutdown
-	ret.reboot = function() ret.object.reboot() end
+	self.turnOn = function() self.object.turnOn() end
+	self.on = self.turnOn
+	self.shutdown = function() self.object.shutdown() end
+	self.off = self. shutdown
+	self.reboot = function() self.object.reboot() end
 
-	ret.__setter = {}
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Computer '%s' ID|Label: %i|'%s' Powered: %s", self.name, self.id, self.label, self.isOn)
+			return string.format("%s '%s' ID|Label: %i|'%s' Powered: %s", self.type, self.name, self.id, self.label, self.isOn)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
+end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.Computer=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
+
+function testDefaultPeripheral()
+	if not Peripheral.default then
+		Peripheral()
+	end
 end
 
 
-return this_library
+return lib

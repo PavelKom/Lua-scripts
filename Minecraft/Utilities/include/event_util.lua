@@ -6,7 +6,7 @@
 	TODO: Add manual
 ]]
 
-locla lib = {}
+local lib = {}
 
 --[[
 All eventes return event name, ...

@@ -1,71 +1,71 @@
 --[[
 	NBT Storage Utility library by PavelKom.
-	Version: 0.9
+	Version: 0.9.5
 	Wrapped NBT Storage
 	https://advancedperipherals.netlify.app/peripherals/nbt_storage/
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.DEFAULT_PERIPHERAL = nil
-
--- Peripheral
-function this_library:NBTStorage(name)
-	local def_type = 'nbtStorage'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to NBT Storage '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local lib = {}
+Peripheral.__items = {}
+function Peripheral:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'nbtStorage', 'NBT Storage', Peripheral)
+	if wrapped ~= nil then return wrapped end
 	
-	ret.read = function() return ret.object.read() end
-	ret.writeTable = function(nbt) return ret.object.writeTable(nbt) end
-	ret.write = ret.writeTable
-	ret.writeJson = function(json)
+	self.read = function() return self.object.read() end
+	self.writeTable = function(nbt) return self.object.writeTable(nbt) end
+	self.write = self.writeTable
+	self.writeJson = function(json)
 		if type(json) == 'table' then
 			json = textutils.serialiseJSON(json)
 		end
-		return ret.object.writeJson(json)
+		return self.object.writeJson(json)
 	end
-	ret.write2 = ret.writeJson
+	self.write2 = self.writeJson
 	
-	ret.__getter = {}
-	ret.__getter.data = ret.read
+	self.__getter = {}
+	self.__getter.data = self.read
 	
-	ret.__setter = {}
-	ret.__setter.data = ret.write
-	ret.__setter.jdata = ret.writeJson
+	self.__setter = {}
+	self.__setter.data = self.write
+	self.__setter.jdata = self.writeJson
 	
 	
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("NBT Storage '%s'", self.name)
+			return string.format("%s '%s'", self.type, self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL
 	})
-	
-	return ret
+	Peripheral.__items[_name] = self
+	if not Peripheral.default then Peripheral.default = self end
+	return self
 end
+Peripheral.delete = function(name)
+	if name then Peripheral.__items[_name] = nil end
+end
+lib.NBTStorage=setmetatable(Peripheral,{__call=Peripheral.new})
+lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
-	if this_library.DEFAULT_PERIPHERAL == nil then
-		this_library.DEFAULT_PERIPHERAL = this_library:NBTStorage()
+	if Peripheral.default == nil then
+		Peripheral()
 	end
 end
-function this_library.read()
+function lib.read()
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.read()
+	return Peripheral.default.read()
 end
-function this_library.writeTable(tbl)
+function lib.writeTable(tbl)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.writeTable(tbl)
+	return Peripheral.default.writeTable(tbl)
 end
-function this_library.writeJson(json)
+function lib.writeJson(json)
 	testDefaultPeripheral()
-	return this_library.DEFAULT_PERIPHERAL.writeJson(json)
+	return Peripheral.default.writeJson(json)
 end
 
-return this_library
+return lib
