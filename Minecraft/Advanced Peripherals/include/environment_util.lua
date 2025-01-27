@@ -58,18 +58,19 @@ function Peripheral:new(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s' Biome(%s) Time(%f) Rain(%s) Thunder(%s) Slime Chunk(%s)", self.type, self.name, self.biome, self.time, tostring(self.rain), tostring(self.thunder), tostring(self.slime))
+			return string.format("%s '%s' Biome(%s) Time(%f) Rain(%s) Thunder(%s) Slime Chunk(%s)", type(self), self.name, self.biome, self.time, tostring(self.rain), tostring(self.thunder), tostring(self.slime))
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Environment Detector"
 	})
-	Peripheral.__items[_name] = self
+	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
 	if name then Peripheral.__items[_name] = nil end
 end
-lib.Monitor=setmetatable(Peripheral,{__call=Peripheral.new})
+lib.EnvironmentDetector=setmetatable(Peripheral,{__call=Peripheral.new})
 lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()

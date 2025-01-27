@@ -41,7 +41,7 @@ local expect = require "cc.expect"
 local expect, field = expect.expect, expect.field
 
 --[[
-	Patch for table library. Add copy function
+	Patch for table library. Add deep copy function
 	https://gist.github.com/tylerneylon/81333721109155b2d244
 
 	table.copy(t: table)

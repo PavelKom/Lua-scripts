@@ -18,7 +18,7 @@ lib.TASKRESULT = {
 	[-3] = 'invalid task',
 	[-4] = 'item not craftable'
 }
-setmetatable(lib.TASKRESULT, {__index = lib.TASKRESULT[1]})
+setmetatable(lib.TASKRESULT, {__index = getset.GETTER_TO_UPPER(lib.TASKRESULT[1])})
 
 lib.OP = {
 LT = 'LT',
@@ -61,12 +61,13 @@ MOD = function(a,b) return a % b end,
 }
 setmetatable(MATH_LAMBDA, {__index = getset.GETTER_TO_UPPER(MATH_LAMBDA.MUL)})
 lib.LOGIC_GATE = {
-AND='AND',
-OR='OR',
-NAND='NAND',
-NOR='NOR',
-XOR='XOR',
-XNOR='XNOR',
+--			  00| 01| 10| 11
+AND='AND',	-- 0|  0|  0|  1
+OR='OR',	-- 0|  1|  1|  1
+NAND='NAND',-- 1|  1|  1|  0
+NOR='NOR',	-- 1|  0|  0|  0
+XOR='XOR',	-- 0|  1|  1|  0
+XNOR='XNOR',-- 1|  0|  0|  1
 }
 setmetatable(lib.LOGIC_GATE, {__index = getset.GETTER_TO_UPPER(lib.LOGIC_GATE.AND)})
 local LOGIC_LAMBDA = {
@@ -141,18 +142,17 @@ function Trigger:new(item1, math_op1, const1, op, item2, math_op2, const2, logic
 		trigger=trigger, -- Other trigger or constant
 	}
 	
-	self.test = function(bridge)
+	self.test = function(bridge) -- RS or ME Bridge
 		local amount1 = self.const1
 		if self.item1 ~= nil then -- Get item1 in bridge
-			amount1 = MATH_LAMBDA[self.math_op1](bridge.object.getItem(self.item1), amount1)
+			amount1 = MATH_LAMBDA[self.math_op1](bridge.object.getItem(self.item1), amount1) -- Multiply/divide/... value
 		end
 		local amount2 = self.const2
-		if self.item2 ~= nil then
+		if self.item2 ~= nil then -- Same for item2
 			amount2 = MATH_LAMBDA[self.math_op2](bridge.object.getItem(self.item2), amount2)
 		end
-		
-		local result = OP_LAMBDA[self.op](amount1, amount2)
-		if self.trigger ~= nil then
+		local result = OP_LAMBDA[self.op](amount1, amount2) -- amount1 [~=<>] amount2
+		if self.trigger ~= nil then -- result [and/or/xor/...] trigger.test()
 			result = LOGIC_LAMBDA[self.logic](result, self.trigger.test(bridge))
 		end
 		return result

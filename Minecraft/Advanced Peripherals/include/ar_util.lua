@@ -144,11 +144,12 @@ function Peripheral:new(name)
 		__pairs = getset.PAIRS, __ipairs = getseta.IPAIRS,
 		__tostring = function(self)
 			local rel = self.isRelative
-			return string.format("%s '%s' RelativeMode: %s", self.type, self.name, tostring(rel))
+			return string.format("%s '%s' RelativeMode: %s", type(self), self.name, tostring(rel))
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "AR Controller"
 	})
-	Peripheral.__items[_name] = self
+	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end

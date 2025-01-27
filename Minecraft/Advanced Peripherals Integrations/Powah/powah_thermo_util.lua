@@ -1,40 +1,36 @@
 --[[
-	Computer Utility library by PavelKom.
-	Version: 0.9.5
-	Wrapped Computer
-	https://tweaked.cc/peripheral/computer.html
+	Thermo Generator library by PavelKom.
+	ONLY FOR 1.19.2 VERSION
+	Version: 0.1
+	Wrapped Thermo Generator
+	https://docs.advanced-peripherals.de/integrations/powah/thermo_generator/
 	TODO: Add manual
 ]]
-
 getset = require 'getset_util'
 local lib = {}
 
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'computer', 'Computer', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'thermo', 'Thermo Generator', Peripheral)
 	if wrapped ~= nil then return wrapped end
+	
 	self.__getter = {
-		isOn = function() return self.object.isOn() end,
-		label = function() return self.object.getLabel() end,
-		id = function() return self.object.getID() end,
+		energy = function() return self.object.getEnergy() end,
+		max = function() return self.object.getMaxEnergy() end,
+		coolant = function() return self.object.getCoolantInTank() end,
 	}
 	self.__setter = {}
+	self.getName = function() return self.object.getName() end
 	
-	self.turnOn = function() self.object.turnOn() end
-	self.on = self.turnOn
-	self.shutdown = function() self.object.shutdown() end
-	self.off = self. shutdown
-	self.reboot = function() self.object.reboot() end
-
 	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s' ID|Label: %i|'%s' Powered: %s", type(self), self.name, self.id, self.label, self.isOn)
+			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Computer"
+		__type = "Thermo Generator"
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
@@ -43,7 +39,7 @@ end
 Peripheral.delete = function(name)
 	if name then Peripheral.__items[_name] = nil end
 end
-lib.Computer=setmetatable(Peripheral,{__call=Peripheral.new})
+lib.ThermoGenerator=setmetatable(Peripheral,{__call=Peripheral.new})
 lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
@@ -51,6 +47,5 @@ function testDefaultPeripheral()
 		Peripheral()
 	end
 end
-
 
 return lib

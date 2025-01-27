@@ -30,11 +30,12 @@ function Peripheral:new(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s' Current block: '%s'", self.type, self.name, self.block)
+			return string.format("%s '%s' Current block: '%s'", type(self), self.name, self.block)
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Block Reader"
 	})
-	Peripheral.__items[_name] = self
+	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end

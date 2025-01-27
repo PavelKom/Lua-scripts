@@ -71,7 +71,8 @@ Terminal.new = function()
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
 			return string.format("Terminal. Size: %ix%i Colors: %s", self.cols, self.rows, self.color)
-		end
+		end,
+		__type = "Terminal"
 	})
 	if not Peripheral.default then Peripheral.default = self end
 	return self

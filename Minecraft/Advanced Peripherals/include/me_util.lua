@@ -11,6 +11,8 @@ local expect = require "cc.expect"
 local expect, field = expect.expect, expect.field
 
 local lib = {}
+lib.Trigger = trigger.Trigger
+lib.CraftTask = trigger.CraftTask
 
 local Peripheral = {}
 Peripheral.__items = {}
@@ -20,20 +22,24 @@ function Peripheral:new(name)
 	
 	self.__getter = {
 		craftableItems = function() return self.object.listCraftableItems() end,
-		craftableFluids = function() return self.object.listCraftableFluid() end,
+		craftableFluids = function() return self.object.listCraftableFluid() end, -- RS: listCraftableFluids
+		
 		items = function() return self.object.listItems() end,
-		fluids = function() return self.object.listFluid() end,
-		gases = function() return self.object.listGas() end,
-		cells = function() return self.object.listCells() end,
-		totalItems = function() return self.object.getTotalItemStorage() end,
-		totalFluids = function() return self.object.getTotalFluidStorage() end,
-		usedItems = function() return self.object.getUsedItemStorage() end,
-		usedFluids = function() return self.object.getUsedFluidStorage() end,
-		availableItems = function() return self.object.getAvailableItemStorage() end,
-		availableFluids = function() return self.object.getAvailableFluidStorage() end,
+		fluids = function() return self.object.listFluid() end, -- RS: listFluids
+		gases = function() return self.object.listGas() end, -- Only ME
+		cells = function() return self.object.listCells() end, -- Only ME
+		
+		totalItems = function() return self.object.getTotalItemStorage() end, -- Only ME
+		totalFluids = function() return self.object.getTotalFluidStorage() end, -- Only ME
+		usedItems = function() return self.object.getUsedItemStorage() end, -- Only ME
+		usedFluids = function() return self.object.getUsedFluidStorage() end, -- Only ME
+		availableItems = function() return self.object.getAvailableItemStorage() end, -- Only ME
+		availableFluids = function() return self.object.getAvailableFluidStorage() end, -- Only ME
+		
 		energy = function() return self.object.getEnergyStorage() end,
 		maxEnergy = function() return self.object.getMaxEnergyStorage() end,
 		usageEnergy = function() return self.object.getEnergyUsage() end,
+		
 		cpus = function() return self.object.getCraftingCPUs() end
 	}
 	self.__getter.craftable = self.__getter.craftableItems
@@ -169,7 +175,7 @@ function Peripheral:new(name)
 	-- Is item crafting?
 	self.isItemCrafting = function(item, craftingCpu)
 		if item.name == nil and item.fingerprint == nil then
-			error("[MEBridge.importItemFromPeripheral] item table without name and fingerprint")
+			error("[MEBridge.isItemCrafting] item table without name and fingerprint")
 		end
 		return self.object.isItemCrafting(item, craftingCpu)
 	end
@@ -186,7 +192,7 @@ function Peripheral:new(name)
 	-- Is item craftable?
 	self.isItemCraftable = function(item, craftingCpu)
 		if item.name == nil and item.fingerprint == nil then
-			error("[MEBridge.importItemFromPeripheral] item table without name and fingerprint")
+			error("[MEBridge.isItemCraftable] item table without name and fingerprint")
 		end
 		return self.object.isItemCraftable(item, craftingCpu)
 	end
@@ -205,7 +211,7 @@ function Peripheral:new(name)
 	-- Add task by name, nbt, fingerprint
 	self.addRawTask = function(name, amount, fingerprint, nbt, batch, isFluid, triggers)
 		local item = {name=name, fingerprint=fingerprint, nbt=nbt}
-		self.tasks[#self.tasks+1] = trigger.CraftTask(item, isFluid, amount, batch, trigger)
+		self.tasks[#self.tasks+1] = lib.CraftTask(item, isFluid, amount, batch, trigger)
 	end
 	-- Add task by table
 	self.addTask = function(task)
@@ -240,14 +246,30 @@ function Peripheral:new(name)
 			table.remove(self.tasks)
 		end
 	end
-	self.runTask(index, callback)
+	self.runTask = function(index, callback)
 		if self.tasks[i] == nil then return -3 end
 		return self.tasks[i].craft(self, callback)
 	end
-	self.runTasks(callback)
+	self.runTasks = function(callback)
 		for _, v in pairs(self.tasks) do
 			v.craft(self, callback)
 		end
+	end
+	self.loadTasksFromJson = function(tbl, clear)
+		if clear then self.clearTasks() end
+		if type(tbl) == 'string' then
+			tbl = textutils.unserializeJSON(tbl)
+		end
+		for _, v in pairs(tbl) do
+			self.tasks[#self.tasks+1] = lib.CraftTask.fromJson(v)
+		end
+	end
+	self.saveTasksToJson = function()
+		local tbl = {}
+		for k, v in pairs(self.tasks) do
+			tbl[k] = v.toJson()
+		end
+		return tbl
 	end
 	
 	self.update = function()
@@ -259,19 +281,19 @@ function Peripheral:new(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s'", self.type, self.name)
+			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
 		__type = "ME Bridge"
 	})
-	Peripheral.__items[_name] = self
+	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
 	if name then Peripheral.__items[_name] = nil end
 end
-lib.Monitor=setmetatable(Peripheral,{__call=Peripheral.new})
+lib.MEBridge=setmetatable(Peripheral,{__call=Peripheral.new})
 lib=setmetatable(lib,{__call=Peripheral.new})
 
 function testDefaultPeripheral()
@@ -280,28 +302,9 @@ function testDefaultPeripheral()
 	end
 end
 
-return lib
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 -- Events
-function lib.waitCcraftingEvent()
+function lib.waitCraftingEvent()
 	--event, success, message
 	return os.pullEvent("crafting")
 end
@@ -324,44 +327,5 @@ function lib.waitCraftingEx(func)
 		loop = func({os.pullEvent("crafting")})
 	end
 end
-
-
-function testDefaultPeripheral()
-	if Peripheral.default == nil then
-		Peripheral.default = lib:MEBridge()
-	end
-end
-
-function lib.taskFromJson(json)
-	if type(json) == 'string' then
-		json = textutils.unserializeJSON(json)
-	end
-	return lib:CraftTask(
-		json.name, json.fingerprint,
-		json.count,
-		json.nbt, json.isFluid,
-		json.batch,
-		triggersFromJson(json.triggers)
-	)
-end
-function lib.triggersFromJson(json)
-	if type(json) == 'string' then
-		json = textutils.unserializeJSON(json)
-	end
-	local trg = lib:Triggers(_,_,_,_,_, json.isOR)
-	for _, v in pairs(json.triggers) do
-		trg.__trgs[#trg.__trgs+1] = triggerFromJson(v)
-	end
-	return result
-end
-function lib.triggerFromJson(json)
-	if type(json) == 'string' then
-		json = textutils.unserializeJSON(json)
-	end
-	return lib:Trigger(json.name, json.fingerprint, json.count, json.nbt, json.operator)
-end
-
-
-
 
 return lib

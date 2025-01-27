@@ -3,7 +3,9 @@ Tips and examples
 
 ## Patches
 Some patches for Lua core.
-**type(object)** can now return a custom value if the *__type* parameter is specified in the metatable
+**type(object)** can now return a custom value if the *__type* parameter is specified in the metatable.
+
+**Note**: import *cc.expect* only after *getset_util*, *patches* or any wrapped peripheral library!!!
 ### Table
 **ipairs(tbl)** is removed from CC:Tweaked (or broken), but what if you want it? Now you can add your own *__ipairs* for custom classes.
 
@@ -99,7 +101,7 @@ class Circle():
   c = circumference
   s = square
 ```
-Note: In Python, adding *_* (single underscore) to the beginning of a property or method name makes it private (but visible from the outside), while *__* (double underscore) makes it hidden.
+**Note**: In Python, adding *_* (single underscore) to the beginning of a property or method name makes it private (but visible from the outside), while *__* (double underscore) makes it hidden.
 
 As you can see, **_radius** is a private property, so the *radius* is used to get/set the value, and the value is checked.
 

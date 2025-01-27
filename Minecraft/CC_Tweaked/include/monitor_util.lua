@@ -80,12 +80,12 @@ function Peripheral:new(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s' Size: %ix%i Colors: %s", self.type, self.name, self.cols, self.rows, self.color)
+			return string.format("%s '%s' Size: %ix%i Colors: %s", type(self), self.name, self.cols, self.rows, self.color)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Moniitor"
+		__type = "Monitor"
 	})
-	Peripheral.__items[_name] = self
+	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end

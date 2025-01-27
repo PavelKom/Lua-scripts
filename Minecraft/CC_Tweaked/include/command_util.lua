@@ -22,9 +22,10 @@ function Peripheral:new(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s'", self.type, self.name)
+			return string.format("%s '%s'", type(self), self.name)
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Command Block"
 	})
 	Peripheral.__objs[_name] = self
 	if not Peripheral.default then Peripheral.default = self end

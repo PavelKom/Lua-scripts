@@ -1,4 +1,4 @@
---[[
+--[[ DEPRECATED (old API)
 	Chemlib Autocraft by PavelKom v0.6b
 
 	Autocrafting chemical elements from the chemlib mod using reactors from Alchemistry and ME-RS Bridges

@@ -137,12 +137,135 @@ ri.output.north = 7 -- Set analog value
 ```
 Can be called without initialization.
 ## ME and RS Bridges
-***WIP***
+RS and ME Bridges allow connection to storage systems from Refined Storage and Applied Energetics respectively. Working with them is similar, but there are differences:
+```lua
+MEBridge = require "me_util"
+RSBridge = require "rs_util"
 
+me_bridge = MEBridge()
+rs_bridge = RSBridge()
 
+-- Gases and cells only for ME
+gases = me_bridge.gases
+cells = me_bridge.cells
 
+-- Storage info for ME
+me_bridge.totalItems
+me_bridge.totalFluids
+me_bridge.usedItems
+me_bridge.usedFluids
+me_bridge.availableItems
+me_bridge.availableFluids
 
+-- Storage info for RS
+rs_bridge.iMaxDiskStorage
+rs_bridge.fMaxDiskStorage
+rs_bridge.iMaxExtStorage
+rs_bridge.fMaxExtStorage
+```
+The rest of the methods and props are the same. Some methods require an *item={name=name,nbt=nbt,fingerprint=fingerprint}* (*name* or *fingerprint* required) as an argument. There are 3 options for these methods:
 
+**.func(...,item,...)** - Get *item* table.
 
+**.func2(...,name,nbt,...)** - Get **name** *string* and **nbt** *string* or *nil*.
 
+**.func3(...,fingerprint,...)** - Get **fingerprint** *string*.
+```lua
+me_bridge.getItem({name='minecraft:cobblestone'})
+me_bridge.getItem2('minecraft:cobblestone')
+me_bridge.getItem3('0123456789ABCDEF')
+```
+### CraftTask and Trigger
+```lua
+trigger = require "trigger_util"
+Trigger = trigger.Trigger
+CraftTask = trigger.CraftTask
+task = CraftTask('minecraft:furnace') -- Simple task
+t = Trigger('minecraft:cobblestone') -- Simple trigger
+```
+Wrapped peripherals can work with crafting tasks that can be triggered by checking for item shortages/surpluses.
+**CraftTask(item, isFluid, amount, batch, trigger)** - Crafting task, useful for autocrafting.
+*item={name=name,...}* - Item table.
+*isFluid* - Craft item or fluid.
+*amount* - Target amount of product.
+*batch* - How many items per call.
+*trigger* - Trigger object or *nil* for autocreating.
 
+**Trigger(item1, math_op1, const1, op, item2, math_op2, const2, logic, trigger)** - Complex trigger for CraftTask.
+
+*item1={name=name,...}*- First item or *nil*.
+
+*math_op1* - Name of math operation for item1. Default *MUL* (a*b)
+
+*const1* - First constant. Default: 1
+
+*op* - Comparison operator. Default: *LT* (a<b)
+
+*item2* - Second item or *nil*.
+
+*math_op2* - Math op for item2. Default *MUL* (a*b)
+
+*const2* - Second constant. Default: trigger.DEFAULT_AMOUNT (1000)
+
+*logic* - Logical operator to check the condition between *self* and the *self.trigger*.
+
+*trigger* - Other trigger or *nil*.
+
+How it works:
+```lua
+	-- From trigger_util.lua
+	self.test = function(bridge) -- RS or ME Bridge
+		local amount1 = self.const1
+		if self.item1 ~= nil then -- Get item1 in bridge
+			amount1 = MATH_LAMBDA[self.math_op1](bridge.object.getItem(self.item1), amount1) -- Multiply/divide/... value
+		end
+		local amount2 = self.const2
+		if self.item2 ~= nil then -- Same for item2
+			amount2 = MATH_LAMBDA[self.math_op2](bridge.object.getItem(self.item2), amount2)
+		end
+		local result = OP_LAMBDA[self.op](amount1, amount2) -- amount1 [~=<>] amount2
+		if self.trigger ~= nil then -- result [and/or/xor/...] trigger.test()
+			result = LOGIC_LAMBDA[self.logic](result, self.trigger.test(bridge))
+		end
+		return result
+	end
+```
+Allowed operators:
+
+*trigger.OP* - Table with comparison operators.
+
+*trigger.MATH* - Table with mathematical functions.
+
+*trigger.LOGIC_GATE* - Table with logic gates.
+
+Example:
+```lua
+-- CHARCOAL
+t = Trigger({name='minecraft:charcoal'})
+--	'minecraft:charcoal'*1 < 1000
+t2 = Trigger({name='minecraft:oak_log'}, _,_, lib.OP.GE)
+--	'minecraft:oak_log'*1 > 1000
+
+t.trigger = t2
+--	('minecraft:charcoal'*1 < 1000) and ('minecraft:oak_log'*1 > 1000)
+	
+task = CraftTask('minecraft:charcoal',_,_,_,t)
+-- Craft charcoal if: charcoal < 1000 AND oak logs > 1000
+
+me_bridge.add_task(task)
+```
+**CraftTask**s and **Trigger**s can be loaded from json (*table* or *string*) and saved to json *table*.
+ME and RS Bridges support loading(*table* or *string*)/saving(*table*) json for **CraftTask**s.
+```lua
+-- Export to config
+local tbl = me_bridge.saveTasksToJson() -- Export tasks to table
+local f = io.open('autocraft.json', 'w') -- Open config file
+f:write(textutils.serializeJSON(tbl)) -- Write json-formatted info to file
+f:close() -- Close config file
+
+-- Import from config
+local f = io.open('autocraft.json', 'r') -- Open json config with CraftTasks
+local tbl = textutils.unserializeJSON(f:read('*a')) -- Read entire file
+f:close() -- Don't forget close file
+me_bridge.loadTasksFromJson(tbl, true) -- Load tasks into bridge, erase old tasks
+```
