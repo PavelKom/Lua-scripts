@@ -12,7 +12,7 @@ local lib = {}
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'energyCell', 'Energy Cell', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'Energy Cell')
 	if wrapped ~= nil then return wrapped end
 	
 	self.__getter = {
@@ -29,17 +29,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Energy Cell"
+		__type = "Energy Cell",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.EnergyCell=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.EnergyCell=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="energyCell",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="EnergyCell",})
 
 function testDefaultPeripheral()
 	if not Peripheral.default then

@@ -12,7 +12,7 @@ lib.SIDES = getset.SIDES
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'inventoryManager', 'Inventory Manager', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'Inventory Manager')
 	if wrapped ~= nil then return wrapped end
 	
 	self.__getter = {
@@ -85,17 +85,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s' Owner: %s", type(self), self.name, self.owner)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Inventory Manager"
+		__type = "Inventory Manager",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.InventoryManager=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.InventoryManager=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="inventoryManager",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="InventoryManager",})
 
 function testDefaultPeripheral()
 	if Peripheral.default == nil then

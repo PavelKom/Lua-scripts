@@ -12,7 +12,7 @@ local lib = {}
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'environmentDetector', 'Environment Detector', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'Environment Detector')
 	if wrapped ~= nil then return wrapped end
 	
 	self.__getter = {
@@ -61,17 +61,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s' Biome(%s) Time(%f) Rain(%s) Thunder(%s) Slime Chunk(%s)", type(self), self.name, self.biome, self.time, tostring(self.rain), tostring(self.thunder), tostring(self.slime))
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Environment Detector"
+		__type = "Environment Detector",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.EnvironmentDetector=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.EnvironmentDetector=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="environmentDetector",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="EnvironmentDetector",})
 
 function testDefaultPeripheral()
 	if not Peripheral.default then

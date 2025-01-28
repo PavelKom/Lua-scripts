@@ -11,7 +11,7 @@ local lib = {}
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'blockReader', 'Block Reader', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'Block Reader')
 	if wrapped ~= nil then return wrapped end
 	
 	self.__getter = {
@@ -33,17 +33,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s' Current block: '%s'", type(self), self.name, self.block)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Block Reader"
+		__type = "Block Reader",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.BlockReader=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.BlockReader=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="blockReader",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="BlockReader",})
 
 function testDefaultPeripheral()
 	if not Peripheral.default then

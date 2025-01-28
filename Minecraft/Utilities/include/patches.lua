@@ -11,31 +11,51 @@
 	pairs(tbl) return tbl.__pairs or default pairs method.
 	ipairs(tbl) NOT return tbl.__pairs BUT return default ipairs method.
 ]]
-local raw_ipairs = ipairs
-ipairs = function(t)
-    local metatable = getmetatable(t)
-    if metatable and metatable.__ipairs then
-        return metatable.__ipairs(t)
-    end
-    return raw_ipairs(t)
-end
-local raw_type = type
-type = function(t)
-	local metatable = getmetatable(t)
-    if metatable and metatable.__type then
-		if type(metatable.__type) == 'function' then -- If __type is function
-			return metatable.__type(t)
-		else -- If type not function but callable
-			local t = getmetatable(metatable.__type)
-			if t and t.__call then
-				return metatable.__type(t)
-			end
+if not _G.raw_ipairs then
+	_G.raw_ipairs = ipairs
+	ipairs = function(t)
+		local metatable = getmetatable(t)
+		if metatable and metatable.__ipairs then
+			return metatable.__ipairs(t)
 		end
-		return metatable.__type
-    end
-    return raw_type(t)
+		return raw_ipairs(t)
+	end
 end
-
+if not _G.raw_type then
+	_G.raw_type = type -- Copy default type function as raw_type
+	type = function(t)
+		local metatable = getmetatable(t)
+		if metatable and metatable.__type then
+			if type(metatable.__type) == 'function' then -- If __type is function
+				return metatable.__type(t)
+			else -- If type not function but callable
+				local t = getmetatable(metatable.__type)
+				if t and t.__call then
+					return metatable.__type(t)
+				end
+			end
+			return metatable.__type
+		end
+		return raw_type(t)
+	end
+end
+if not _G.subtype then
+	_G.subtype = function(t)
+		local metatable = getmetatable(t)
+		if metatable and metatable.__subtype then
+			if type(metatable.__subtype) == 'function' then -- If __subtype is function
+				return metatable.__subtype(t)
+			else -- If type not function but callable
+				local t = getmetatable(metatable.__subtype)
+				if t and t.__call then
+					return metatable.__subtype(t)
+				end
+			end
+			return metatable.__subtype
+		end
+		return type(t)
+	end
+end
 local expect = require "cc.expect"
 local expect, field = expect.expect, expect.field
 

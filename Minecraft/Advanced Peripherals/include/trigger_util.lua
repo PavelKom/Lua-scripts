@@ -162,10 +162,11 @@ function Trigger:new(item1, math_op1, const1, op, item2, math_op2, const2, logic
 	end
 	
 	setmetatable(self, {
-	__tostring = function(self)
-		return Trigger.toJson(self)
-	end,
-	__type='Trigger',})
+		__tostring = function(self)
+			return Trigger.toJson(self)
+		end,
+		__type='Trigger',
+		__subtype = "utility",})
 	return self
 end
 function Trigger.fromJson(tbl)
@@ -199,8 +200,8 @@ function Trigger.toJson(trigger)
 	trigger=Trigger.toJson(trigger.trigger)
 	})
 end
-lib.Trigger=setmetatable(Trigger,{__call=Trigger.new})
---lib=setmetatable(lib,{__call=Trigger.new})
+lib.Trigger=setmetatable(Trigger,{__call=Trigger.new,__type = "utility",__subtype="Trigger",})
+lib=setmetatable(lib,{__call=Trigger.new,__type = "library",__subtype="RS_ME_Trigger",})
 
 --[[Examples: Trigger(item1, math_op1, const1, op, item2, math_op2, const2, logic, trigger)
 t = Trigger({name='minecraft:cobblestone'}})
@@ -301,10 +302,12 @@ function CraftTask:new(item, isFluid, amount, batch, trigger)
 	end
 	
 	setmetatable(self, {
-	__tostring = function(self)
-		return CraftTask.toJson(self)
-	end,
-	__type='CraftTask'})
+		__tostring = function(self)
+			return CraftTask.toJson(self)
+		end,
+		__type='CraftTask',
+		__subtype = "utility",
+		})
 	return self
 end
 function CraftTask.fromJson(tbl)
@@ -330,7 +333,7 @@ function CraftTask.toJson(task)
 	trigger=Trigger.toJson(task.trigger)
 	})
 end
-lib.CraftTask=setmetatable(CraftTask,{__call=CraftTask.new})
+lib.CraftTask=setmetatable(CraftTask,{__call=CraftTask.new,__type = "utility",__subtype="CraftTask",})
 
 
 return lib

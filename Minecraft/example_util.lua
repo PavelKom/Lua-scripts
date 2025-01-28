@@ -14,7 +14,7 @@ Peripheral.__items = {} -- To avoid re-initialization of the same peripheral
 function Peripheral:new(name)
 	-- PERIPHERAL_TYPE - like 'monitor' or 'modem'. For peripheral.find
 	-- EXAMPLE_PERIPHERAL - Visual name, like 'Monitor' or 'Modem'
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'PERIPHERAL_TYPE', 'EXAMPLE_PERIPHERAL', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'EXAMPLE_PERIPHERAL_SHOW_NAME')
 	if wrapped ~= nil then return wrapped end -- If peripheral already register, return it
 
 	-- Place for metatables like pos, palette, input, output, etc.
@@ -31,17 +31,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "EXAMPLE_PERIPHERAL" -- result of type()
+		__type = "EXAMPLE_PERIPHERAL_SHOW_NAME", -- result of type()
+		__subtype = "peripheral", -- result of subtype()
 	})
 	Peripheral.__items[self.name] = self -- Register peripheral
 	if not Peripheral.default then Peripheral.default = self end -- Register default peripheral
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.EXAMPLE_PERIPHERAL=setmetatable(Peripheral,{__call=Peripheral.new}) -- Peripheral() same as Peripheral:new()
-lib=setmetatable(lib,{__call=Peripheral.new}) -- If this library contain only one peripheral, lib() same as Peripheral:new()
+lib.EXAMPLE_PERIPHERAL=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="type_of_peripheral",}) -- Peripheral() same as Peripheral:new(); subtype(Peripheral) == peripheral.getType(wrapped_or_name)
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="EXAMPLE_PERIPHERAL",}) -- If this library contain only one peripheral, lib() same as Peripheral:new()
 
 function testDefaultPeripheral() -- For non-initialization calls
 	if not Peripheral.default then

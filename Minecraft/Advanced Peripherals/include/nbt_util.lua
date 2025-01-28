@@ -10,7 +10,7 @@ getset = require 'getset_util'
 local lib = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'nbtStorage', 'NBT Storage', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'NBT Storage')
 	if wrapped ~= nil then return wrapped end
 	
 	self.read = function() return self.object.read() end
@@ -39,17 +39,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "NBT Storage"
+		__type = "NBT Storage",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.NBTStorage=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.NBTStorage=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="nbtStorage",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="NBTStorage",})
 
 function testDefaultPeripheral()
 	if Peripheral.default == nil then

@@ -72,13 +72,14 @@ Terminal.new = function()
 		__tostring = function(self)
 			return string.format("Terminal. Size: %ix%i Colors: %s", self.cols, self.rows, self.color)
 		end,
-		__type = "Terminal"
+		__type = "Terminal",
+		__subtype = "utility",
 	})
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
-lib.Terminal=setmetatable(Terminal,{__call=Terminal.new})
-lib.Term=setmetatable(Terminal,{__call=Terminal.new})
-lib=setmetatable(lib,{__call=Terminal.new})
+lib.Terminal=setmetatable(Terminal,{__call=Terminal.new,__type = "utility",__subtype="wrapper",})
+lib.Term=setmetatable(Terminal,{__call=Terminal.new,__type = "utility",__subtype="wrapper",})
+lib=setmetatable(lib,{__call=Terminal.new,__type = "library",__subtype="Terminal",})
 
 return lib

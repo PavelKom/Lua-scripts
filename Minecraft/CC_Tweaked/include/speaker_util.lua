@@ -1,8 +1,8 @@
 --[[
 	Speaker Utility library by PavelKom.
 	Version: 0.7.5
-	Wrapped Printer
-	https://tweaked.cc/peripheral/monitor.html
+	Wrapped Speaker
+	https://tweaked.cc/peripheral/speaker.html
 	TODO: Add manual
 		  Add cc.audio.dfpwm support for playAudio
 		  
@@ -21,7 +21,7 @@ setmetatable(lib.INSTRUMENTS, {__index = getset.GETTER_TO_UPPER(lib.INSTRUMENTS.
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'speaker', 'Speaker', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'Speaker')
 	if wrapped ~= nil then return wrapped end
 	
 	self.__getter = {}
@@ -50,24 +50,25 @@ function Peripheral:new(name)
 			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Speaker"
+		__type = "Speaker",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.Speaker=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.Speaker=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="speaker",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="Speaker",})
 
 function testDefaultPeripheral()
 	if not Peripheral.default then
 		Peripheral()
 	end
 end
-
+----------- OLD API
 function.lib:Speakers()
 	local def_type = 'speaker'
 	local _speakers = {peripheral.find(def_type)}

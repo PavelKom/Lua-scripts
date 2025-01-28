@@ -15,7 +15,7 @@ setmetatable(lib.ALIGN, {__index = lib.GETTER_TO_UPPER(lib.ALIGN.LEFT)})
 local Peripheral = {}
 Peripheral.__items = {}
 function Peripheral:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'arController', 'ARController', Peripheral)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Peripheral, 'ARController')
 	if wrapped ~= nil then return wrapped end
 	self.__ids = {}
 	setmetatable(self.__ids, {
@@ -147,17 +147,18 @@ function Peripheral:new(name)
 			return string.format("%s '%s' RelativeMode: %s", type(self), self.name, tostring(rel))
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "AR Controller"
+		__type = "AR Controller",
+		__subtype = "peripheral",
 	})
 	Peripheral.__items[self.name] = self
 	if not Peripheral.default then Peripheral.default = self end
 	return self
 end
 Peripheral.delete = function(name)
-	if name then Peripheral.__items[_name] = nil end
+	if name then Peripheral.__items[name] = nil end
 end
-lib.ARController=setmetatable(Peripheral,{__call=Peripheral.new})
-lib=setmetatable(lib,{__call=Peripheral.new})
+lib.ARController=setmetatable(Peripheral,{__call=Peripheral.new,__type = "peripheral",__subtype="arController",})
+lib=setmetatable(lib,{__call=Peripheral.new,__type = "library",__subtype="ARController",})
 
 function testDefaultPeripheral()
 	if not Peripheral.default then

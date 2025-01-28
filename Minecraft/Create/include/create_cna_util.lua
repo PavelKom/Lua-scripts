@@ -7,290 +7,277 @@
 ]]
 getset = require 'getset_util'
 
-local this_library = {}
-this_library.SIDES = getset.SIDES
+local lib = {}
+lib.SIDES = getset.SIDES
 
-function sideMeta(get)
-	return {
-		__index = function(self, side)
-			return get(this_library.SIDES[side])
-		end,
-		__pairs = function(self) -- Return relatives
-			local i = 0
-			local key, value
-			return function()
-				i = i + 1
-				key = this_library.SIDES[i]
-				if i > 6 then return nil, nil end
-				value = get(key)
-				return key, value
-			end
-		end,
-		__ipairs = function(self) -- Return cardinals
-			local i = 6
-			local key, value
-			return function()
-				i = i + 1
-				key = this_library.SIDES[i]
-				if i > 12 then return nil, nil end
-				value = get(key)
-				return key, value
-			end
-		end,
-	}
-end
-function sideMeta2(get, set)
-	local result = sideMeta(get)
-	result.__newindex = function(self, side, value)
-		set(this_library.SIDES[side], value)
-	end
-	return result
-end
+
+
 function sideMetaTbl2(get)
 	return {
 		__index = function(self, side)  -- tbl[{a,b}]
 			local a,b = table.unpack(side)
-			return get(this_library.SIDES[a], b)
+			return get(lib.SIDES[a], b)
 		end,
 	}
 end
 
+
 -- Peripherals
-function this_library:ElectricMotor(name)
-	local def_type = 'electric_motor'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Electric Motor '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+local ElectricMotor = {}
+ElectricMotor.__items = {}
+function ElectricMotor:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, ElectricMotor, 'Electric Motor')
+	if wrapped ~= nil then return wrapped end
 	
-	ret.__getter = {
-		speed = function() return ret.object.getSpeed() end,
-	    abs = function() return math.abs(ret.object.getSpeed()) end,
-	    dir = function() return ret.object.getSpeed() >= 0 and 1 or -1 end,
-		extract = function() return ret.object.getMaxExtract() end,
-		energy = function() return ret.object.getEnergyConsumption() end,
-		stress = function() return ret.object.getStressCapacity() end,
-		insert = function() return ret.object.getMaxInsert() end,
+	self.__getter = {
+		speed = function() return self.object.getSpeed() end,
+	    abs = function() return math.abs(self.object.getSpeed()) end,
+	    dir = function() return self.object.getSpeed() >= 0 and 1 or -1 end,
+		extract = function() return self.object.getMaxExtract() end,
+		energy = function() return self.object.getEnergyConsumption() end,
+		stress = function() return self.object.getStressCapacity() end,
+		insert = function() return self.object.getMaxInsert() end,
 	}
-	ret.__setter = {
-		speed = function(value) ret.object.setSpeed(value) end,
+	self.__setter = {
+		speed = function(value) self.object.setSpeed(value) end,
 	    abs = function(value) -- non-negative number
-			ret.object.setSpeed(math.abs(value)*ret.dir)
+			self.object.setSpeed(math.abs(value)*self.dir)
 		end,
 	    dir = function(value) -- boolean or number
 			if type(value) == 'boolean' then
-				ret.object.setSpeed(ret.abs * (value and 1 or -1))
+				self.object.setSpeed(self.abs * (value and 1 or -1))
 			elseif type(value) == 'number' then
-				ret.object.setSpeed(ret.abs * (value >= 0 and 1 or -1))
+				self.object.setSpeed(self.abs * (value >= 0 and 1 or -1))
 			end
 		end,
 	}
 	
-	ret.translate = function(blocks, rpm) return ret.object.translate(blocks, rpm) end
-	ret.stop = function() ret.object.stop() end
-	ret.rotate = function(degrees, rpm) ret.object.rotate(degrees, rpm) end
+	self.translate = function(blocks, rpm) return self.object.translate(blocks, rpm) end
+	self.stop = function() self.object.stop() end
+	self.rotate = function(degrees, rpm) self.object.rotate(degrees, rpm) end
 	
-	setmetatable(ret, {
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Electric Motor '%s'", self.name)
+			return string.format("%s '%s'", type(self), self.name)
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Electric Motor",
+		__subtype = "peripheral",
 	})
-	return ret
+	ElectricMotor.__items[self.name] = self
+	if not ElectricMotor.default then ElectricMotor.default = self end
+	return self
 end
-function this_library:Generator(name)
-	local def_type = 'createaddition:alternator'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Generator '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {
-		energy = function() return ret.object.getEnergy() end,
-		cap = function() return ret.object.getEnergyCapacity() end,
-	}
-	ret.__getter.maxEnergy = ret.__getter.cap
-	ret.__getter.max = ret.__getter.cap
-	
-	ret.__setter = {}
-	setmetatable(ret, {
-		__index = getset.GETTER, __newindex = getset.SETTER, 
-		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
-		__tostring = function(self)
-			return string.format("Generator '%s' Energy: %i/%i", self.name, self.energy, self.max)
-		end,
-		__eq = getset.EQ_PERIPHERAL
-	})
-	return ret
+ElectricMotor.delete = function(name)
+	if name then ElectricMotor.__items[name] = nil end
 end
-function this_library:Accumulator(name)
-	local def_type = 'modular_accumulator'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Accumulator '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
+lib.ElectricMotor=setmetatable(ElectricMotor,{__call=ElectricMotor.new,__type = "peripheral",__subtype="electric_motor",})
+
+
+local Accumulator = {}
+Accumulator.__items = {}
+function Accumulator:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Accumulator, 'Accumulator')
+	if wrapped ~= nil then return wrapped end
 	
-	ret.__getter = {
-		energy = function() return ret.object.getEnergy() end,
-		cap = function() return ret.object.getCapacity() end,
-		percent = function() return ret.object.getPercent() end,
-		height = function() return ret.object.getHeight() end,
-		extract = function() return ret.object.getMaxExtract() end,
-		insert = function() return ret.object.getMaxInsert() end,
-		width = function() return ret.object.getWidth() end,
+	self.__getter = {
+		energy = function() return self.object.getEnergy() end,
+		cap = function() return self.object.getCapacity() end,
+		percent = function() return self.object.getPercent() end,
+		height = function() return self.object.getHeight() end,
+		extract = function() return self.object.getMaxExtract() end,
+		insert = function() return self.object.getMaxInsert() end,
+		width = function() return self.object.getWidth() end,
 		cap2 = function()
-			return ret.cap / (math.pow(ret.w,2)*ret.h)
+			return self.cap / (math.pow(self.w,2)*self.h)
 		end
 	}
-	ret.__getter.maxEnergy = ret.__getter.cap
-	ret.__getter.max = ret.__getter.cap
-	ret.__getter.h = ret.__getter.height
-	ret.__getter.w = ret.__getter.width
-	ret.__getter.cap_per_block = ret.__getter.cap2
+	self.__getter.maxEnergy = self.__getter.cap
+	self.__getter.max = self.__getter.cap
+	self.__getter.h = self.__getter.height
+	self.__getter.w = self.__getter.width
+	self.__getter.cap_per_block = self.__getter.cap2
 	
-	ret.__setter = {}
-	setmetatable(ret, {
+	self.__setter = {}
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Accumulator '%s' Energy: %i/%i Size:%ix%ix%i FE/block: %i", self.name, self.energy, self.max, self.w, self.w, self.h, self.cap2)
+			return string.format("%s '%s' Energy: %i/%i Size:%ix%ix%i FE/block: %i", type(self), self.name, self.energy, self.max, self.w, self.w, self.h, self.cap2)
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Accumulator",
+		__subtype = "peripheral",
 	})
-	return ret
+	Accumulator.__items[self.name] = self
+	if not Accumulator.default then Accumulator.default = self end
+	return self
 end
-function this_library:PEI(name)
-	local def_type = 'portable_energy_interface'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Portable Energy Interface '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {
-		energy = function() return ret.object.getEnergy() end,
-		cap = function() return ret.object.getCapacity() end,
-		extract = function() return ret.object.getMaxExtract() end,
-		insert = function() return ret.object.getMaxInsert() end,
-		isConnected = function() return ret.object.isConnected() end,
-		percent = function() return ret._get() / ret._cap() end,
-	}
-	ret.__getter.maxEnergy = ret.__getter.cap
-	ret.__getter.max = ret.__getter.cap
-	ret.__getter.connected = ret.__getter.isConnected
-	ret.__getter.con = ret.__getter.isConnected
-	
-	ret.__setter = {}
-	setmetatable(ret, {
-		__index = getset.GETTER, __newindex = getset.SETTER, 
-		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
-		__tostring = function(self)
-			return string.format("Portable Energy Interface '%s' Energy: %i/%i Connected: %s", self.name, self.energy, self.max, self.isConnected)
-		end,
-		__eq = getset.EQ_PERIPHERAL
-	})
-	return ret
+Accumulator.delete = function(name)
+	if name then Accumulator.__items[name] = nil end
 end
-function this_library:RedstoneRelay(name)
-	local def_type = 'redstone_relay'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Redstone Relay '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {
-		extract = function() return ret.object.getMaxExtract() end,
-		insert = function() return ret.object.getMaxInsert() end,
-		isPowered = function() return ret.object.isPowered() end,
-		throughput = function() return ret.object.getThroughput() end,
-	}
-	ret.__getter.pow = ret.__getter.isPowered
+lib.Accumulator=setmetatable(Accumulator,{__call=Accumulator.new,__type = "peripheral",__subtype="modular_accumulator",})
 
-	ret.__setter = {}
-	setmetatable(ret, {
+
+local PEI = {}
+PEI.__items = {}
+function PEI:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, PEI, 'Portable Energy Interface')
+	if wrapped ~= nil then return wrapped end
+	
+	self.__getter = {
+		energy = function() return self.object.getEnergy() end,
+		cap = function() return self.object.getCapacity() end,
+		extract = function() return self.object.getMaxExtract() end,
+		insert = function() return self.object.getMaxInsert() end,
+		isConnected = function() return self.object.isConnected() end,
+		percent = function() return self._get() / self._cap() end,
+	}
+	self.__getter.maxEnergy = self.__getter.cap
+	self.__getter.max = self.__getter.cap
+	self.__getter.connected = self.__getter.isConnected
+	self.__getter.con = self.__getter.isConnected
+	
+	self.__setter = {}
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Redstone Relay '%s' Power:%s Throughput: %i IO:%i|%i", self.name, self.isPowered, self.throughput, self.insert, self.extract)
+			return string.format("%s '%s' Energy: %i/%i Connected: %s", type(self), self.name, self.energy, self.max, self.isConnected)
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Portable Energy Interface",
+		__subtype = "peripheral",
 	})
-	return ret
+	PEI.__items[self.name] = self
+	if not PEI.default then PEI.default = self end
+	return self
 end
-function this_library:DigitalAdapter(name)
-	local def_type = 'digital_adapter'
-	local ret = {object = name and peripheral.wrap(name) or peripheral.find(def_type)}
-	if ret.object == nil then error("Can't connect to Digital Adapter '"..name or def_type.."'") end
-	ret.name = peripheral.getName(ret.object)
-	ret.type = peripheral.getType(ret.object)
-	if ret.type ~= def_type then error("Invalid peripheral type. Expect '"..def_type.."' Present '"..ret.type.."'") end
-	
-	ret.__getter = {}
-	ret.__setter = {}
-	
-	-- Display Link
-	ret.display = {
-		clear = function() ret.object.clear() end,
-		clearLine = function() ret.object.clearLine() end,
-		print = function() ret.object.print() end,
-		__getter = {
-			line = function() return ret.object.getLine() end,
-			maxLines = function() return ret.object.getMaxLines() end,
-		},
-		__setter = {
-			line = function(ln) return ret.object.setLine(ln) end,
-		},
+PEI.delete = function(name)
+	if name then PEI.__items[name] = nil end
+end
+lib.PEI=setmetatable(PEI,{__call=PEI.new,__type = "peripheral",__subtype="portable_energy_interface",})
+
+local RedstoneRelay = {}
+RedstoneRelay.__items = {}
+function RedstoneRelay:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, RedstoneRelay, 'Redstone Relay')
+	if wrapped ~= nil then return wrapped end
+
+	self.__getter = {
+		extract = function() return self.object.getMaxExtract() end,
+		insert = function() return self.object.getMaxInsert() end,
+		isPowered = function() return self.object.isPowered() end,
+		throughput = function() return self.object.getThroughput() end,
 	}
-	ret.display.write = ret.display.print
-	
-	setmetatable(ret.display, {
+	self.__getter.pow = self.__getter.isPowered
+
+	self.__setter = {}
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
+		__tostring = function(self)
+			return string.format("%s '%s' Power:%s Throughput: %i IO:%i|%i", type(self), self.name, self.isPowered, self.throughput, self.insert, self.extract)
+		end,
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Redstone Relay",
+		__subtype = "peripheral",
 	})
+	RedstoneRelay.__items[self.name] = self
+	if not RedstoneRelay.default then RedstoneRelay.default = self end
+	return self
+end
+RedstoneRelay.delete = function(name)
+	if name then RedstoneRelay.__items[name] = nil end
+end
+lib.RedstoneRelay=setmetatable(RedstoneRelay,{__call=RedstoneRelay.new,__type = "peripheral",__subtype="redstone_relay",})
+
+
+local DigitalAdapter = {}
+DigitalAdapter.__items = {}
+function DigitalAdapter:new(name)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, DigitalAdapter, 'Redstone Relay')
+	if wrapped ~= nil then return wrapped end
 	
-	-- Speed Controller
-	ret.controller = {speed = {}}
-	getset.metaSide(ret.controller.speed, ret.object.getTargetSpeed, ret.object.setTargetSpeed, _, ret.object.getTargetSpeed)
+	self.__getter = {
+		max_speed = function() return self.object.getKineticTopSpeed end,
+	}
+	self.__setter = {}
+	
+	-- Rotational Speed Controller
+	self.controller = {}
+	self.controller.speed = getset.metaSide(self.object.getTargetSpeed, self.object.setTargetSpeed, _, self.object.getTargetSpeed)
 	
 	-- Stress and Speed Gauges
-	ret.gauge = {stress={},cap={},speed={},max={},}
-	getset.metaSide(ret.gauge.stress, ret.object.getKineticStress, _, _, ret.object.getKineticStress)
-	getset.metaSide(ret.gauge.cap, ret.object.getKineticCapacity, _, _, ret.object.getKineticCapacity)
-	getset.metaSide(ret.gauge.speed, ret.object.getKineticSpeed, _, _, ret.object.getKineticSpeed)
-	getset.metaSide(ret.gauge.max, ret.object.getKineticTopSpeed, _, _, ret.object.getKineticTopSpeed)
+	self.gauge = {}
+	self.gauge.stress = getset.metaSide(self.object.getKineticStress, _, _, self.object.getKineticStress)
+	self.gauge.cap = getset.metaSide(self.object.getKineticCapacity, _, _, self.object.getKineticCapacity)
+	self.gauge.speed = getset.metaSide(self.object.getKineticSpeed, _, _, self.object.getKineticSpeed)
+	self.max_speed 
 
-	-- Mechanical pulleys (Rope, Hose, or Elevator -Pulley, etc)
-	ret.pulley = {}
-	getset.metaSide(ret.pulley, ret.object.getPulleyDistance, _, _, ret.object.getPulleyDistance)
-	ret.piston = {}
-	getset.metaSide(ret.piston, ret.object.getPistonDistance, _, _, ret.object.getPistonDistance)
-	ret.bearing = {}
-	getset.metaSide(ret.bearing, ret.object.getBearingAngle, _, _, ret.object.getBearingAngle)
-	ret.floors = {}
-	-- Get/set floor. Call for #floors
-	getset.metaSide(ret.floor, ret.object.getElevatorFloor, ret.object.gotoElevatorFloor, ret.object.getElevatorFloors, ret.object.getElevatorFloor)
-	ret.floorName = {}
-	setmetatable(ret.floorName, sideMetaTbl2(ret.object.getElevatorFloorName))
-	ret.durAngle = {}
-	setmetatable(ret.durAngle, sideMetaTbl2(ret.object.getDurationAngle))
-	ret.durDistance = {}
-	setmetatable(ret.durDistance, sideMetaTbl2(ret.object.getDurationDistance))
+	-- Pulley
+	self.pulley = getset.metaSide(self.object.getPulleyDistance, _, _, self.object.getPulleyDistance)
+
+	-- Elevators
+	self.getFloor = function(side) return self.object.getElevatorFloor(lib.SIDES[side]) end
+	self.gotoFloor = function(side, index) return self.object.gotoElevatorFloor(lib.SIDES[side], index) end
+	self.getFloors = function(side) return self.object.getElevatorFloors(lib.SIDES[side]) end
+	self.getFloorName = function(side, index) return self.object.getElevatorFloorName(lib.SIDES[side], index) end
 	
-	setmetatable(ret, {
+	-- Piston
+	self.piston = getset.metaSide(self.object.getPistonDistance, _, _, self.object.getPistonDistance)
+	
+	-- Bearing
+	self.bearing = getset.metaSide(self.object.getBearingAngle, _, _, self.object.getBearingAngle)
+	
+	-- Display Link
+	self.display = {
+		clear = function() self.object.clear() end,
+		clearLine = function() self.object.clearLine() end,
+		print = function(text) self.object.print(text) end,
+		__getter = {
+			line = function() return self.object.getLine() end,
+			maxLines = function() return self.object.getMaxLines() end,
+		},
+		__setter = {
+			line = function(ln) return self.object.setLine(ln) end,
+		},
+	}
+	
+	setmetatable(self.display, {
+		__index = getset.GETTER, __newindex = getset.SETTER, 
+		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
+	})
+	
+	
+	
+	self.durAngle = function(degrees, rpm)
+		return self.object.getDurationAngle(degrees, rpm)
+	end
+	self.durDistance = function(blocks, rpm)
+		return self.object.getDurationDistance(blocks, rpm)
+	end
+	
+	setmetatable(self, {
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("Digital Adapter '%s'", self.name)
+			return string.format("%s '%s'", type(self), self.name)
 		end,
-		__eq = getset.EQ_PERIPHERAL
+		__eq = getset.EQ_PERIPHERAL,
+		__type = "Digital Adapter",
+		__subtype = "peripheral",
 	})
-	return ret
+	DigitalAdapter.__items[self.name] = self
+	if not DigitalAdapter.default then DigitalAdapter.default = self end
+	return self
 end
+DigitalAdapter.delete = function(name)
+	if name then DigitalAdapter.__items[name] = nil end
+end
+lib.DigitalAdapter=setmetatable(DigitalAdapter,{__call=DigitalAdapter.new,__type = "peripheral",__subtype="digital_adapter",})
 
-return this_library
+
+return lib

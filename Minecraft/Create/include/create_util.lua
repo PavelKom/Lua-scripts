@@ -15,7 +15,7 @@ local lib = {}
 local Speedometer = {}
 Speedometer.__items = {}
 function Speedometer:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'Create_Speedometer', 'Speedometer', Speedometer)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Speedometer, 'Speedometer')
 	if wrapped ~= nil then return wrapped end
 
 	self.__getter = {
@@ -32,22 +32,23 @@ function Speedometer:new(name)
 			return string.format("%s '%s' Speed: %i", type(self), self.name, self.speed)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Speedometer"
+		__type = "Speedometer",
+		__subtype = "peripheral",
 	})
 	Speedometer.__items[self.name] = self
 	if not Speedometer.default then Speedometer.default = self end
 	return self
 end
 Speedometer.delete = function(name)
-	if name then Speedometer.__items[_name] = nil end
+	if name then Speedometer.__items[name] = nil end
 end
-lib.Speedometer=setmetatable(Speedometer,{__call=Speedometer.new})
+lib.Speedometer=setmetatable(Speedometer,{__call=Speedometer.new,__type = "peripheral",__subtype="Create_Speedometer",})
 
 -- Stressometer
 local Stressometer = {}
 Stressometer.__items = {}
 function Stressometer:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'Create_Stressometer', 'Stressometer', Stressometer)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, Stressometer, 'Stressometer')
 	if wrapped ~= nil then return wrapped end
 
 	self.__getter = {
@@ -71,22 +72,23 @@ function Stressometer:new(name)
 			return string.format("%s '%s' Stress: %i/%i (%.1f%%)", type(self), self.name, self.stress, self.max, self.use * 100)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Stressometer"
+		__type = "Stressometer",
+		__subtype = "peripheral",
 	})
 	Stressometer.__items[self.name] = self
 	if not Stressometer.default then Stressometer.default = self end
 	return self
 end
 Stressometer.delete = function(name)
-	if name then Stressometer.__items[_name] = nil end
+	if name then Stressometer.__items[name] = nil end
 end
-lib.Stressometer=setmetatable(Stressometer,{__call=Stressometer.new})
+lib.Stressometer=setmetatable(Stressometer,{__call=Stressometer.new,__type = "peripheral",__subtype="Create_Stressometer",})
 
 -- Rotation Speed Controller
 local RotationSpeedController = {}
 RotationSpeedController.__items = {}
 function RotationSpeedController:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'Create_RotationSpeedController', 'Rotation Speed Controller', RotationSpeedController)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, RotationSpeedController, 'Rotation Speed Controller')
 	if wrapped ~= nil then return wrapped end
 
 	self.__getter = {
@@ -136,22 +138,23 @@ function RotationSpeedController:new(name)
 			return string.format("%s '%s' Speed: %i", type(self), self.name, self.speed)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Rotation Speed Controller"
+		__type = "Rotation Speed Controller",
+		__subtype = "peripheral",
 	})
 	RotationSpeedController.__items[self.name] = self
 	if not RotationSpeedController.default then RotationSpeedController.default = self end
 	return self
 end
 RotationSpeedController.delete = function(name)
-	if name then RotationSpeedController.__items[_name] = nil end
+	if name then RotationSpeedController.__items[name] = nil end
 end
-lib.RotationSpeedController=setmetatable(RotationSpeedController,{__call=RotationSpeedController.new})
+lib.RotationSpeedController=setmetatable(RotationSpeedController,{__call=RotationSpeedController.new,__type = "peripheral",__subtype="Create_RotationSpeedController",})
 
 -- Display Link
 local DisplayLink = {}
 DisplayLink.__items = {}
 function DisplayLink:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'Create_DisplayLink', 'Display Link', DisplayLink)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, DisplayLink, 'Display Link')
 	if wrapped ~= nil then return wrapped end
 
 	self.pos = getset.metaPos(self.object.getCursorPos, self.object.setCursorPos)
@@ -205,22 +208,23 @@ function DisplayLink:new(name)
 			return string.format("%s '%s' Size: %ix%i Colors: %s", type(self), self.name, table.unpack(self.size), self.color)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Display Link"
+		__type = "Display Link",
+		__subtype = "peripheral",
 	})
 	DisplayLink.__items[self.name] = self
 	if not DisplayLink.default then DisplayLink.default = self end
 	return self
 end
 DisplayLink.delete = function(name)
-	if name then DisplayLink.__items[_name] = nil end
+	if name then DisplayLink.__items[name] = nil end
 end
-lib.DisplayLink=setmetatable(DisplayLink,{__call=DisplayLink.new})
+lib.DisplayLink=setmetatable(DisplayLink,{__call=DisplayLink.new,__type = "peripheral",__subtype="Create_DisplayLink",})
 
 -- Sequenced Gearshift
 local SequencedGearshift = {}
 SequencedGearshift.__items = {}
 function SequencedGearshift:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'Create_SequencedGearshift', 'Sequenced Gearshift', SequencedGearshift)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, SequencedGearshift, 'Sequenced Gearshift')
 	if wrapped ~= nil then return wrapped end
 
 	self.__getter = {
@@ -240,23 +244,24 @@ function SequencedGearshift:new(name)
 			return string.format("%s '%s'", type(self), self.name, table.unpack(self.size), self.color)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Sequenced Gearshift"
+		__type = "Sequenced Gearshift",
+		__subtype = "peripheral",
 	})
 	SequencedGearshift.__items[self.name] = self
 	if not SequencedGearshift.default then SequencedGearshift.default = self end
 	return self
 end
 SequencedGearshift.delete = function(name)
-	if name then SequencedGearshift.__items[_name] = nil end
+	if name then SequencedGearshift.__items[name] = nil end
 end
-lib.SequencedGearshift=setmetatable(SequencedGearshift,{__call=SequencedGearshift.new})
+lib.SequencedGearshift=setmetatable(SequencedGearshift,{__call=SequencedGearshift.new,__type = "peripheral",__subtype="Create_SequencedGearshift",})
 
 
 -- Sequenced Gearshift
 local TrainStation = {}
 TrainStation.__items = {}
 function TrainStation:new(name)
-	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, 'Create_Station', 'Train Station', TrainStation)
+	local self, wrapped = getset.VALIDATE_PERIPHERAL(name, TrainStation, 'Train Station')
 	if wrapped ~= nil then return wrapped end
 
 	self.__getter = {
@@ -303,16 +308,17 @@ function TrainStation:new(name)
 			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
-		__type = "Train Station"
+		__type = "Train Station",
+		__subtype = "peripheral",
 	})
 	TrainStation.__items[self.name] = self
 	if not TrainStation.default then TrainStation.default = self end
 	return self
 end
 TrainStation.delete = function(name)
-	if name then TrainStation.__items[_name] = nil end
+	if name then TrainStation.__items[name] = nil end
 end
-lib.TrainStation=setmetatable(TrainStation,{__call=TrainStation.new})
+lib.TrainStation=setmetatable(TrainStation,{__call=TrainStation.new,__type = "peripheral",__subtype="Create_Station",}})
 
 lib.INSTRUCTION_NAMES = {
 -- Create
@@ -740,7 +746,8 @@ function Schedule:new()
 		__tostring = function(self)
 			return string.format("%s %s", type(self), Schedule.toJson(self))
 		end,
-		__type = "Create Train Schedule"
+		__type = "Create Train Schedule",
+		__subtype = "utility",
 	})
 
 	return self
@@ -759,7 +766,6 @@ function Schedule.fromJson(tbl)
 	s.validate()
 	return s
 end
-lib.Schedule=setmetatable(Schedule,{__call=Schedule.new})
 
 function Schedule.fromStation(station)
 	local self = Schedule()
@@ -785,6 +791,7 @@ function Schedule.toStation(schedule, station)
 		warn2(_, "Can't set schedule to station '%s'. Reason: %s", station.name, err)
 	end
 end
+lib.Schedule=setmetatable(Schedule,{__call=Schedule.new,__type = "utility",__subtype="Schedule",})
 
 
 return lib

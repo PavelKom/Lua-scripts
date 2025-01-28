@@ -67,20 +67,25 @@ lib.CUSTOM_TYPE = function(name)
 	return function(self) return name end
 end
 
-lib.VALIDATE_PERIPHERAL = function(name, peripheral_type, peripheral_name, peripheral_table)
+lib.VALIDATE_PERIPHERAL = function(name, peripheral_table, peripheral_name)
+	if name and peripheral_table.__items[name] then
+		return nil, peripheral_table.__items[name]
+	end
 	-- Wrap or find peripheral
-	local object = name and peripheral.wrap(name) or peripheral.find(peripheral_type)
-	if object == nil then error("Can't connect to "..peripheral_name.." '"..name or peripheral_type.."'") end
+	local _t = subtype(peripheral_table)
+	local object = name and peripheral.wrap(name) or peripheral.find(_t)
+	if object == nil then error("Can't connect to "..peripheral_name.." '"..name or _t.."'") end
 	-- If it already registered, return 
-	if peripheral_table.__items[peripheral.getName(object)] then
-		return nil, peripheral_table.__items[peripheral.getName(object)]
+	name = peripheral.getName(object)
+	if peripheral_table.__items[name] then
+		return nil, peripheral_table.__items[name]
 	end
 	-- Test for miss-type
 	_type = peripheral.getType(object)
-	if _type ~= peripheral_type then error("Invalid peripheral type. Expect '"..peripheral_type.."' Present '".._type.."'") end
-	_name = peripheral.getName(object)
+	if _type ~= _t then error("Invalid peripheral type. Expect '".._t.."' Present '".._type.."'") end
 	
-	return {object=object, name=_name, type=_type}, nil
+	
+	return {object=object, name=name, type=_type}, nil
 end
 
 lib.GETTER = function(self, index)
