@@ -160,7 +160,7 @@ function DisplayLink:new(name)
 		size = function() return {self.object.getSize()} end,
 		rows = function() return self.size[2] end,
 		columns = function() return self.size[1] end,
-		color = function() return self.object.isColor() end
+		color = function() return self.object.isColor() end,
 		
 		row = function() return self.pos.y end,
 		column = function() return self.pos.x end,
@@ -192,7 +192,7 @@ function DisplayLink:new(name)
 	self.update = function(reload)
 		if reload then
 			self.object = peripheral.wrap(self.name)
-			if self.object == nil error("[DisplayLink.update] Can't update peripheral object") end
+			if self.object == nil then error("[DisplayLink.update] Can't update peripheral object") end
 			self.pos = getset.metaPos(self, self.object.getCursorPos, self.object.setCursorPos)
 		end
 		self.object.update()
@@ -282,14 +282,14 @@ function TrainStation:new(name)
 			local result, err = pcall(self.object.hasSchedule)
 			return result and err or false
 		end,
-		schedule = function() return Schedule(self) end
+		schedule = function() return lib.Schedule.fromStation(self) end
 	}
 	
-	self.__ssetter = {
+	self.__setter = {
 		mode = function(assemblyMode) return pcall(self.object.setAssemblyMode,assemblyMode) end,
 		station = function(name) return pcall(self.object.setStationName,name) end,
 		train = function(name) return pcall(self.object.setTrainName,name) end,
-		schedule = function(schedule) return pcall(self.object.setSchedule,schedule.toStation()) end,
+		schedule = function(schedule) return pcall(self.object.setSchedule,schedule.toStation(self)) end,
 	}
 	
 	
@@ -300,7 +300,7 @@ function TrainStation:new(name)
 		__index = getset.GETTER, __newindex = getset.SETTER, 
 		__pairs = getset.PAIRS, __ipairs = getset.IPAIRS,
 		__tostring = function(self)
-			return string.format("%s '%s'", type(self), self.name, table.unpack(self.size), self.color)
+			return string.format("%s '%s'", type(self), self.name)
 		end,
 		__eq = getset.EQ_PERIPHERAL,
 		__type = "Train Station"
@@ -314,394 +314,477 @@ TrainStation.delete = function(name)
 end
 lib.TrainStation=setmetatable(TrainStation,{__call=TrainStation.new})
 
-lib.INSTRUCTIONS = {
-DESTINATION = "create:destination",
-RENAME = "create:rename",
-THROTTLE = "create:throttle",
+lib.INSTRUCTION_NAMES = {
+-- Create
+destination = "create:destination",
+rename = "create:rename",
+throttle = "create:throttle",
+-- Create Railways Navigator
+travel_section = "createrailwaysnavigator:travel_section",
+reset_timings = "createrailwaysnavigator:reset_timings",
+-- Create Steam 'n' Rails
+redstone_link = "railways:redstone_link",
+waypoint_destination = "railways:waypoint_destination",
 }
-setmetatable(lib.INSTRUCTIONS, {__index = getset.GETTER_TO_UPPER(lib.INSTRUCTIONS.DESTINATION)})
+setmetatable(lib.INSTRUCTION_NAMES, {__index = getset.GETTER_TO_LOWER(lib.INSTRUCTION_NAMES.destination)})
 
-lib.CONDITIONS = {
-DELAY = "create:delay",
-TIME = "create:time_of_day",
-FLUID = "create:fluid_threshold",
-ITEM = "create:item_threshold",
-REDSTONE = "create:redstone_link",
-PLAYER = "create:player_count",
-IDLE = "create:idle",
-UNLOADED = "create:unloaded",
-POWERED = "create:powered"
+lib.CONDITION_NAMES = {
+delay = "create:delay",
+time = "create:time_of_day",
+fluid = "create:fluid_threshold",
+item = "create:item_threshold",
+redstone = "create:redstone_link",
+player = "create:player_count",
+idle = "create:idle",
+unloaded = "create:unloaded",
+powered = "create:powered",
+-- Create Crafts & Additions
+energy = "createaddition:energy_threshold",
+-- Create Railways Navigator
+dynamic = "createrailwaysnavigator:dynamic_delay",
+separation = "createrailwaysnavigator:train_separation",
+-- Create Steam 'n' Rails
+loaded = "railways:loaded",
 }
-setmetatable(lib.CONDITIONS, {__index = getset.GETTER_TO_UPPER(lib.CONDITIONS.IDLE)})
+setmetatable(lib.CONDITION_NAMES, {__index = getset.GETTER_TO_LOWER(lib.CONDITION_NAMES.idle)})
 
-local function TABLE_NIL_VALIDATOR(info, tbl)
-	if tbl == nil then
-		warn("[Create.Schedule] 'create:destination' data is nil. Generating new data.")
+local DEFAULT_ITEM = {id="minecraft:stone",count=1}
+local DEFAULT_FLUID = {id="minecraft:water_bucket",count=1}
+local DEFAULT_REDSTONE_LINK = {{id="minecraft:air",count=1},{id="minecraft:air",count=1}}
+setmetatable(DEFAULT_ITEM, {__tostring = serializeJSON})
+setmetatable(DEFAULT_FLUID, {__tostring = serializeJSON})
+setmetatable(DEFAULT_REDSTONE_LINK, {__tostring = serializeJSON})
+
+local function warn2(no_warn, ...)
+	if no_warn then return end
+	print(...)
+end
+
+local function VALUE_NIL_VALIDATE(no_warn, info, tbl, name, default, _type, _min, _max)
+	if type(tbl) ~= 'table' then
+		warn2(no_warn, string.format("[Create.Schedule] '%s' data type is %s (expect table). Generating new data.", info, type(tbl)))
 		tbl = {}
 	end
-	return tbl
-end
-local function VALUE_NIL_VALIDATOR(info, tbl, name, default)
-	if tbl[name] == nil then
-		warn(string.format("[Create.Schedule] '%s' data.%s% is nil. Setting default value (%s)", info, tostring(name), tostring(default))
+	if name and tbl[name] == nil then
+		warn2(no_warn, string.format("[Create.Schedule] '%s' data[%s] is missing. Setting default value (%s)", info, tostring(name), tostring(default)))
 		tbl[name] = default
+	elseif _type and type(tbl[name]) ~= _type then
+		warn2(no_warn, string.format("[Create.Schedule] '%s' data.%s% data type is %s (expect %s). Setting default value (%s)", info, tostring(name), type(tbl[name]), _type, tostring(default)))
+		tbl[name] = default
+	elseif type(tbl[name]) == 'number' and (_min ~= nil or _max ~= nil) then
+		local result, err = pcall(range, tbl[name], _min, _max)
+		if not result then
+			warn2(no_warn, string.format("[Create.Schedule] '%s' data.%s% (%f) is outside of the allowed range (%f...%f). Setting default value (%s)",
+					info, tostring(name), tbl[name], _min or -math.huge, _max or math.huge, tostring(default)))
+			tbl[name] = default
+		end
 	end
 	return tbl
 end
 
 lib.SCHEDULE_DATA_VALIDATE = {
 -- INSTRUCTIONS
-["create:destination"] = function(tbl)
-	expect(1, tbl, "table", "nil")
-	TABLE_NIL_VALIDATOR("create:destination", tbl)
-	field(tbl, "text", "string", "nil")
-	VALUE_NIL_VALIDATOR("create:destination", tbl, 'text', '*')
+["create:destination"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:destination", tbl, 'text', '*', 'string')
 	return tbl
 end,
-["create:rename"] = function(tbl)
-	expect(1, tbl, "table", "nil")
-	TABLE_NIL_VALIDATOR("create:rename", tbl)
-	field(tbl, "text", "string", "nil")
-	VALUE_NIL_VALIDATOR("create:rename", tbl, 'text', 'INVALID_SCHEDULE_NAME')
+["create:rename"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:rename", tbl, 'text', 'INVALID_SCHEDULE_NAME', 'string')
 	return tbl
 end,
-["create:throttle"] = function(tbl)
-	expect(1, tbl, "table", "nil")
-	TABLE_NIL_VALIDATOR("create:throttle", tbl)
-	field(tbl, "value", "number", "nil")
-	VALUE_NIL_VALIDATOR("create:throttle", tbl, 'value', 5)
+["create:throttle"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:throttle", tbl, 'value', 5, 'number')
 	return tbl
 end,
+-- Create Railways Navigator
+["createrailwaysnavigator:travel_section"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:travel_section", tbl, 'usable', true, 'boolean')
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:travel_section", tbl, 'include_previous_station', true, 'false')
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:travel_section", tbl, 'train_group', "", 'string')
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:travel_section", tbl, 'train_line', "", 'string')
+	return tbl
+end,
+["createrailwaysnavigator:reset_timings"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:reset_timings", tbl)
+	return tbl
+end,
+-- Create Steam 'n' Rails
+["railways:redstone_link"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "railways:redstone_link", tbl, 'frequency', DEFAULT_REDSTONE_LINK, 'table')
+	tbl.frequency[1].count = 1
+	tbl.frequency[2].count = 1
+	VALUE_NIL_VALIDATE(no_warn, "railways:redstone_link", tbl, 'power', 15, 'number', 0, 15)
+	return tbl
+end,
+["railways:waypoint_destination"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "railways:waypoint_destination", tbl, 'text', "*", 'string')
+	return tbl
+end,
+
 
 -- CONDITIONS
-["create:delay"] = function(tbl)
-	expect(1, tbl, "table", "nil")
-	TABLE_NIL_VALIDATOR("create:delay", tbl)
-	field(tbl, "value", "number", "nil")
-	VALUE_NIL_VALIDATOR("create:delay", tbl, 'value', 5)
-	field(tbl, "time_unit", "number", "nil")
-	if tbl.time_unit ~= nil then
-		range(tbl.time_unit, 0, 2)
-	else
-		VALUE_NIL_VALIDATOR("create:delay", tbl, 'time_unit', 1)
-	end
+["create:delay"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:delay", tbl, 'value', 5, 'number')
+	VALUE_NIL_VALIDATE(no_warn, "create:delay", tbl, 'time_unit', 1, 'number', 0, 2)
 	return tbl
 end,
-["create:time_of_day"] = function(tbl)
-	expect(1, tbl, "table", "nil")
-	TABLE_NIL_VALIDATOR("create:time_of_day", tbl)
-	field(tbl, "hour", "number", "nil")
-	if tbl.hour ~= nil then
-		range(tbl.hour, 0, 23)
-	else
-		VALUE_NIL_VALIDATOR("create:time_of_day", tbl, 'hour', 6)
-	end
-	field(tbl, "minute", "number", "nil")
-	if tbl.minute ~= nil then
-		range(tbl.minute, 0, 59)
-	else
-		VALUE_NIL_VALIDATOR("create:time_of_day", tbl, 'minute', 0)
-	end
-	field(tbl, "rotation", "number", "nil")
-	if tbl.rotation ~= nil then
-		range(tbl.rotation, 0, 9)
-	else
-		VALUE_NIL_VALIDATOR("create:time_of_day", tbl, 'rotation', 0)
-	end
+["create:time_of_day"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:time_of_day", tbl, 'hour', 6, 'number', 0, 23)
+	VALUE_NIL_VALIDATE(no_warn, "create:time_of_day", tbl, 'minute', 0, 'number', 0, 59)
+	VALUE_NIL_VALIDATE(no_warn, "create:time_of_day", tbl, 'rotation', 0, 'number', 0, 9)
 	return tbl
 end,
-["create:fluid_threshold"] = function(tbl)
-	expect(1, tbl, "table", "nil")
-	TABLE_NIL_VALIDATOR("create:fluid_threshold", tbl)
-	field(tbl, "bucket", "number", "nil")
-	VALUE_NIL_VALIDATOR("create:fluid_threshold", tbl, 'bucket', 1)
-	field(tbl, "threshold", "number", "nil")
-	if tbl.threshold ~= nil then
-		range(tbl.threshold, 1)
-	else
-		VALUE_NIL_VALIDATOR("create:fluid_threshold", tbl, 'threshold', 1)
-	end
-	field(tbl, "operator", "number", "nil")
-	if tbl.operator ~= nil then
-		range(tbl.rotation, 0, 2)
-	else
-		VALUE_NIL_VALIDATOR("create:fluid_threshold", tbl, 'operator', 0)
-	end
+["create:fluid_threshold"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:fluid_threshold", tbl, 'bucket', DEFAULT_FLUID, 'table')
+	tbl.bucket.count = 1
+	ALUE_NIL_VALIDATE(no_warn, "create:fluid_threshold", tbl, 'threshold', 1, 'number', 1)
+	VALUE_NIL_VALIDATE(no_warn, "create:fluid_threshold", tbl, 'operator', 0, 'number', 0, 2)
 	tbl.measure = 0 -- Only 0 allowed for fluids
 	return tbl
-end, -- TODO
-ITEM = "create:item_threshold",
-REDSTONE = "create:redstone_link",
-PLAYER = "create:player_count",
-IDLE = "create:idle",
-UNLOADED = "create:unloaded",
-POWERED = "create:powered"
+end,
+["create:item_threshold"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:item_threshold", tbl, 'item', DEFAULT_ITEM, 'table')
+	tbl.item.count = 1
+	VALUE_NIL_VALIDATE(no_warn, "create:item_threshold", tbl, 'threshold', 1, 'number', 1)
+	VALUE_NIL_VALIDATE(no_warn, "create:item_threshold", tbl, 'operator', 0, 'number', 0, 2)
+	VALUE_NIL_VALIDATE(no_warn, "create:item_threshold", tbl, 'measure', 0, 'number', 0, 1)
+	return tbl
+end,
+["create:redstone_link"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:redstone_link", tbl, 'frequency', DEFAULT_REDSTONE_LINK, 'table')
+	tbl.frequency[1].count = 1
+	tbl.frequency[2].count = 1
+	VALUE_NIL_VALIDATE(no_warn, "create:redstone_link", tbl, 'inverted', 0, 'number', 0, 1)
+	return tbl
+end,
+["create:player_count"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:player_count", tbl, 'count', 0, 'number', 0)
+	VALUE_NIL_VALIDATE(no_warn, "create:player_count", tbl, 'exact', 0, 'number', 0, 1)
+	return tbl
+end,
+["create:idle"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:idle", tbl, 'value', 5, 'number')
+	VALUE_NIL_VALIDATE(no_warn, "create:idle", tbl, 'time_unit', 1, 'number', 0, 2)
+	return tbl
+end,
+["create:unloaded"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:unloaded", tbl)
+	return tbl
+end,
+["create:powered"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "create:powered", tbl)
+	return tbl
+end,
 
+-- Create Crafts & Additions
+["createaddition:energy_threshold"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "createaddition:energy_threshold", tbl, 'threshold', 10, 'number', 0)
+	VALUE_NIL_VALIDATE(no_warn, "createaddition:energy_threshold", tbl, 'operator', 0, 'number', 0, 2)
+	tbl.measure = 0 -- Only 0 allowed for energy (kFE)
+	return tbl
+end,
+
+-- Create Railways Navigator
+["createrailwaysnavigator:dynamic_delay"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:dynamic_delay", tbl, 'min', 0, 'number', 0)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:dynamic_delay", tbl, 'value', 0, 'number', 0)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:dynamic_delay", tbl, 'time_unit', 0, 'number', 0, 2)
+	return tbl
+end,
+["createrailwaysnavigator:train_separation"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:train_separation", tbl, 'value', 0, 'number', 0)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:train_separation", tbl, 'ticks', 0, 'number', 0)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:train_separation", tbl, 'time_unit', 0, 'number', 0, 2)
+	VALUE_NIL_VALIDATE(no_warn, "createrailwaysnavigator:train_separation", tbl, 'train_filter', false, 'boolean')
+	return tbl
+end,
+
+["railways:loaded"] = function(tbl, no_warn)
+	VALUE_NIL_VALIDATE(no_warn, "railways:loaded", tbl)
+	return tbl
+end,
 }
-setmetatable(lib.INSTRUCTIONS_VALIDATE, {__index = getset.GETTER_TO_LOWER(lib.INSTRUCTIONS_VALIDATE["create:destination"])})
+for k, v in pairs(lib.INSTRUCTION_NAMES) do -- Bind destination as create:destination
+	lib.SCHEDULE_DATA_VALIDATE[k] = lib.SCHEDULE_DATA_VALIDATE[v]
+	lib.INSTRUCTION_NAMES[v] = v
+end
+for k, v in pairs(lib.CONDITION_NAMES) do
+	lib.SCHEDULE_DATA_VALIDATE[k] = lib.SCHEDULE_DATA_VALIDATE[v]
+	lib.CONDITION_NAMES[v] = v
+end
+setmetatable(lib.SCHEDULE_DATA_VALIDATE, {__index = getset.GETTER_TO_LOWER(nil)})
+
+--[[
+{
+	"cyclic": true, -- bool
+    "entries": { -- array
+		{
+			"instruction": { -- dict
+                "data": {
+                    "text": "Track Station"
+                },
+                "id": "create:destination"
+            },
+            "conditions": { -- array
+				{ -- condition group, 
+					{ -- condition, dict
+                        "data": {
+                            "value": 5,
+                            "time_unit": 1
+                        },
+                        "id": "create:delay"
+                    },
+                    {
+                        "data": {
+                            "rotation": 5,
+                            "hour": 8,
+                            "minute": 0
+                        },
+                        "id": "create:time_of_day"
+                    },
+				
+				
+				
+				}
+			}
+
+		},
+	}
+}
+]]
+
+-- Conditions only for destination
+local IS_NEED_CONDITIONS = function(instruction_tbl)
+	if instruction_tbl.id == "create:destination" then return true end
+	return false
+end
+
+local SCHEDULE_BLOCKS_VALIDATE = {}
+SCHEDULE_BLOCKS_VALIDATE = {
+	SCHEDULE = function(dict, no_warn)
+		expect(1, dict, 'table', 'nil')
+		dict = dict or {}
+		dict.cyclic = SCHEDULE_BLOCKS_VALIDATE.CYCLIC(dict.cyclic, no_warn)
+		dict.entries = SCHEDULE_BLOCKS_VALIDATE.ENTRIES(dict.entries, no_warn)
+		return dict
+	end,
+	CYCLIC = function(val, no_warn)
+		return not not val
+	end,
+	ENTRIES = function(arr, no_warn)
+		expect(1, arr, 'table', 'nil')
+		arr = arr or {}
+		local _arr = {}
+		for _, v in pairs(arr) do
+			_arr[#_arr+1] = SCHEDULE_BLOCKS_VALIDATE.ENTRY(v, no_warn)
+		end
+		if #_arr == 0 then
+			warn2(no_warn, "[Create.Schedule] schedule.entries is empty. Repair.")
+			_arr[#_arr+1] = SCHEDULE_BLOCKS_VALIDATE.ENTRY({}, no_warn)
+		end
+		return _arr
+	end,
+	ENTRY = function(dict, no_warn)
+		expect(1, dict, 'table', 'nil')
+		dict = dict or {}
+		dict.instruction = SCHEDULE_BLOCKS_VALIDATE.INSTRUCTION(dict.instruction, no_warn)
+		if IS_NEED_CONDITIONS(dict.instruction) then
+			dict.conditions = SCHEDULE_BLOCKS_VALIDATE.CONDITIONS(dict.conditions, no_warn)
+		else
+			dict.conditions = nil
+		end
+		return dict
+	end,
+	INSTRUCTION = function(dict, no_warn)
+		expect(1, dict, 'table', 'nil')
+		dict = dict or {}
+		return lib.SCHEDULE_DATA_VALIDATE[lib.INSTRUCTION_NAMES[dict.id]]({id=lib.INSTRUCTION_NAMES[dict.id],data=data}, no_warn)
+	end,
+	CONDITIONS = function(arr, no_warn)
+		expect(1, arr, 'table', 'nil')
+		arr = arr or {}
+		local _arr = {}
+		for _, v in pairs(arr) do
+			_arr[#_arr+1] = SCHEDULE_BLOCKS_VALIDATE.CONDITION_GROUP(v, no_warn)
+		end
+		if #_arr == 0 then
+			warn2(no_warn, "[Create.Schedule] schedule.entries[].conditions is empty. Repair.")
+			_arr[#_arr+1] = SCHEDULE_BLOCKS_VALIDATE.CONDITION_GROUP({}, no_warn)
+		end
+		return _arr
+	end,
+	CONDITION_GROUP = function(arr, no_warn)
+		expect(1, arr, 'table', 'nil')
+		arr = arr or {}
+		local _arr = {}
+		for _, v in pairs(arr) do
+			_arr[#_arr+1] = SCHEDULE_BLOCKS_VALIDATE.CONDITION(v, no_warn)
+		end
+		if #_arr == 0 then
+			warn2(no_warn, "[Create.Schedule] schedule.entries[].conditions[] is empty. Repair.")
+			_arr[#_arr+1] = SCHEDULE_BLOCKS_VALIDATE.CONDITION({}, no_warn)
+		end
+		return _arr
+	end,
+	CONDITION = function(dict, no_warn)
+		expect(1, dict, 'table', 'nil')
+		dict = dict or {}
+		return lib.SCHEDULE_DATA_VALIDATE[lib.CONDITION_NAMES[dict.id]]({id=lib.CONDITION_NAMES[dict.id],data=dict.data}, no_warn)
+	end,
+}
+
+
+
+
+
 
 
 local Schedule = {}
 function Schedule:new()
-	self.schedule = {
-		cyclic = false,
-		entries = {},
-	}
-
-	self.addEntry = function(instruction, conditions)
-	
-	
-	end
-	self.addConditionGroup = function(entry, conds)
-	
-	
-	end
-	self.addCondition = function(entry, group, condition)
-	
-	
-	end
-	self.createInstruction = function(id, data)
-		id = id or "create:destination"
-		data = validate_schedule_data(id, data)
-		return {id=id, data=data}
-	end
-
-end
-function Schedule.fromStation(name)
-	local result, self = pcall(peripheral.call, station.object, 'getSchedule')
-	
-	local self = Schedule()
-	
-	return self
-end
-
-
-
--- DEPRECATED (old API)
-
-local id_data_tbls = {
-	-- Create
-	-- Instruction
-	["create:destination"] = {text='MISSING NAME'},
-	["create:rename"] = {text='MISSING NAME'},
-	["create:throttle"] = {value=100},
-	-- Condition
-	["create:delay"] = {value=60, time_unit=1},
-	["create:time_of_day"] = {hour=6, minute=0, rotation=0},
-	["create:fluid_threshold"] = {bucket={id='minecraft:air', count=1}, threshold=1, operator=0, measure=0},
-	["create:item_threshold"] = {item={id='minecraft:air', count=1}, threshold=1, operator=0, measure=0},
-	["create:redstone_link"] = {frequency={{id='minecraft:air', count=1},{id='minecraft:air', count=1}}, inverted=0},
-	["create:player_count"] = {count=1, exact=1},
-	["create:idle"] = {value=100, time_unit=1},
-	["create:unloaded"] = {}, ["create:powered"] = {},
-	
-	-- Create: Crafts and Additions
-	-- Condition
-	["create:energy_threshold"] = {threshold=1, operator=0, measure=0}, -- measure=0 - Kfe
-}
-local fix_data = {
-	["create:destination"] = function(data) return {text=data} end,
-	["create:throttle"] = function(data) return {value=data} end,
-	["create:time_of_day"] = function(data) return {hour=data} end,
-	["create:player_count"] = function(data) return {count=data} end,
-	["create:energy_threshold"] = function(data) return {threshold=data} end,
-	["create:fluid_threshold"] = function(data)
-		if type(data) ~= 'table' then
-			data = {id=data or 'minecraft:air', count=1}
-		end
-		if data["bucket"] == nil then
-			data = {bucket=data}
-		end
-		return data
-	end,
-	["create:item_threshold"] = function(data)
-		if type(data) ~= 'table' then
-			data = {id=data or 'minecraft:air', count=1}
-		end
-		if data["item"] == nil then
-			data = {item=data}
-		end
-		return data
-	end,
-	["create:redstone_link"] = function(data)
-		if type(data) ~= 'table' then
-			val = data or 'minecraft:air'
-			data = {{id=val, count=1},{id=val, count=1}}
-		end
-		if data["frequency"] == nil then
-			data = {frequency=data}
-		end
-		return data
-	end,
-}
-fix_data["create:rename"] = fix_data["create:destination"]
-fix_data["create:delay"] = fix_data["create:throttle"]
-fix_data["create:idle"] = fix_data["create:throttle"]
-local function validate_schedule_data(id, data)
-	if id_data_tbls[id] == nil then
-		error(string.format("[lib]Schedule: invalid id '%s'",id))
-	end
-	data = fix_data[id](data)
-	for k, v in pairs(id_data_tbls[id]) do
-		data[k] = data[k] or v
+	local self = {schedule = {}}
+	-- Validate schedule
+	self.validate = function(no_warn) -- Fix broken parts of schedule
+		self.schedule = SCHEDULE_BLOCKS_VALIDATE.SCHEDULE(self.schedule, no_warn)
 	end
 	
-	return data
-end
-lib.ScheduleOperator = {
-	__call = function(val) return lib.ScheduleOperator[num] end,
-	[0] = 0, ['0'] = 0, GREATER = 0,
-	[1] = 1, ['1'] = 1, LESS = 1,
-	[2] = 2, ['2'] = 2, EQUAL = 2
-}
-lib.ScheduleTimeUnit = {
-	__call = function(val) return lib.ScheduleTimeUnit[num] end,
-	[0] = 0, ['0'] = 0, TICK = 0,
-	[1] = 1, ['1'] = 1, SECONDS = 1,
-	[2] = 2, ['2'] = 2, MINUTES = 2
-}
-lib.ScheduleMeasure = {
-	__call = function(val) return lib.ScheduleTimeUnit[num] end,
-	[0] = 0, ['0'] = 0, ITEM = 0,
-	[1] = 1, ['1'] = 1, STACK = 1,
-}
-lib.SchedulePlayerCount = {
-	__call = function(val) return lib.SchedulePlayerCount[num] end,
-	[0] = 0, ['0'] = 0, EXACT = 0,
-	[1] = 1, ['1'] = 1, GREATER = 1,
-}
-function lib:Schedule(station)
-	local result, self = pcall(peripheral.call, station.object, 'getSchedule')
-	if not result then return nil end
-	self.addEntry = function(instruction, conditions)
-		instruction = instruction or self.createInstruction()
-		conditions = conditions or {self.createConditionGroup()}
-		self.entries[#self.entries+1] = {instruction=instruction, conditions=conditions}
+	-- Create schedule blocks
+	self.createEntry = function(instruction, conditions, no_warn)
+		return SCHEDULE_BLOCKS_VALIDATE.ENTRY({instruction=instruction,conditions=conditions}, no_warn)
 	end
-	self.addConditionGroup = function(entry, conds)
-		entry = entry or #self.entries
-		index = #self.entries[entry].conditions+1
-		self.entries[entry].conditions[index] = self.createConditionGroup(conds)
+	self.createInstruction = function(id, data, no_warn) -- Id types:  'create:destination', 'destination', lib.INSTRUCTION_NAMES.DESTINATION
+		return SCHEDULE_BLOCKS_VALIDATE.INSTRUCTION({id=id,data=data}, no_warn)
 	end
-	self.addCondition = function(entry, group, condition)
-		entry = entry or #self.entries
-		group = group or #self.entries[entry].conditions
-		cond = #self.entries[entry].conditions[group]+1
-		condition = condition or self.createCondition()
-		self.entries[entry].conditions[group][cond] = condition
+	self.createConditions = function(data, no_warn) -- data is array-like table with condition groups
+		return SCHEDULE_BLOCKS_VALIDATE.CONDITIONS(data, no_warn)
 	end
-	self.createInstruction = function(id, data)
-		id = id or "create:destination"
-		data = validate_schedule_data(id, data)
-		return {id=id, data=data}
+	self.createConditionGroup = function(data, no_warn) -- data is array-like table with conditions
+		return SCHEDULE_BLOCKS_VALIDATE.CONDITION_GROUP(data, no_warn)
 	end
-	self.createCondition = {
-		__call = function(id, data)
-		id = id or "create:delay"
-		data = validate_schedule_data(id, data)
-		return {id=id, data=data}
-		end,
-		delay = function(value, time_unit)
-			return {id='create:delay', data={value=tonumber(value or 60),time_unit=lib.ScheduleTimeUnit(time_unit)}}
-		end,
-		time = function(hour, minute, rotation)
-			return {id='create:time_of_day', data={hour=tonumber(hour or 6), minute=tonumber(minute or 0), rotation=tonumber(rotation or 0)}}
-		end,
-		fluid = function(bucket, threshold, operator)
-			if type(bucket) ~= 'table' then
-				bucket = {id = tostring(bucket or "minecraft:air"), count = 1}
-			end
-			return {id='create:fluid_threshold',
-					data={bucket=bucket,threshold=tonumber(threshold or 0),operator=lib.ScheduleOperator(operator),measure=0}}
-		end,
-		item = function(item, threshold, operator, measure)
-			if type(item) ~= 'table' then
-				item = {id = tostring(item or "minecraft:air"), count = 1, measure=tonumber(measure or 0)}
-			end
-			return {id='create:item_threshold',
-					data={item=item,threshold=tonumber(threshold or 0),operator=lib.ScheduleOperator(operator),measure=lib.ScheduleMeasure(measure)}}
-		end,
-		energy = function(threshold, operator) -- For Create: Crafts and Additions
-			return {id='create:energy_threshold',
-					data={item=item,threshold=tonumber(threshold or 0),operator=lib.ScheduleOperator(operator),measure=0}}
-		end,
-		redstone = function(frequency, inverted)
-			if type(frequency) ~= 'table' then
-				frequency = {{id=tostring(frequency or "minecraft:air"), count=1},{id="minecraft:air", count=1}}
-			end
-			if type(frequency[1]) ~= 'table' then
-				frequency[1] = {id=tostring(frequency[1] or "minecraft:air"), count=1}
-			end
-			if type(frequency[2]) ~= 'table' then
-				frequency[2] = {id=tostring(frequency[2] or "minecraft:air"), count=1}
-			end
-			return {id='create:redstone_link',
-					data={frequency=frequency, inverted=tonumber(inverted or 0)}}
-		end,
-		player = function(count, exact)
-			return {id='create:player_count',
-					data={count=tonumber(count or 0),operator=lib.SchedulePlayerCount(operator)}}
-		end,
-		idle = function(value, time_unit)
-			return {id='create:idle', data={value=tonumber(value or 60),time_unit=lib.ScheduleTimeUnit(time_unit)}}
-		end,
-		unloaded = function() return {id='create:unloaded'} end,
-		powered = function() return {id='create:powered'} end
-	}
-	self.createConditionGroup = function(conditions)
-		conditions = conditions or {self.createCondition()}
-		return conditions
+	self.createCondition = function(id, data, no_warn) -- Id types:  'create:delay', 'delay', lib.CONDITION_NAMES.DELAY
+		return SCHEDULE_BLOCKS_VALIDATE.CONDITION({id=id,data=data}, no_warn)
 	end
-	self.getConditions = function(entry)
-		entry = entry or #self.entries
-		return self.entries[entry].conditions
+	
+	-- Add blocks
+	self.addEntry = function(instruction, conditions, no_warn)
+		local entry = SCHEDULE_BLOCKS_VALIDATE.ENTRY({instruction=instruction,conditions=conditions}, no_warn)
+		self.schedule.entries[#self.schedule.entries] = entry
 	end
-	self.getConditionGroup = function(entry, group)
-		entry = entry or #self.entries
-		group = group or #self.entries[entry].conditions
-		return self.entries[entry].conditions[group]
+	self.addConditionGroup = function(entry_id, data, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		local group = SCHEDULE_BLOCKS_VALIDATE.CONDITION_GROUP(data, no_warn)
+		local index = #self.schedule.entries[entry_id]+1
+		self.schedule.entries[entry_id][index] = group
 	end
-	self.getCondition = function(entry, group, cond)
-		entry = entry or #self.entries
-		group = group or #self.entries[entry].conditions
-		cond = cond or #self.entries[entry].conditions[group]
-		return self.entries[entry].conditions[group][cond]
+	self.addCondition = function(entry_id, group_id, id, data, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		group_id = tonumber(group_id) or #self.schedule.entries[entry_id]
+		range(group_id, 1, #self.schedule.entries[entry_id])
+		local cond = SCHEDULE_BLOCKS_VALIDATE.CONDITION({id=id,data=data}, no_warn)
+		local index = #self.schedule.entries[entry_id][group_id]+1
+		self.schedule.entries[entry_id][group_id][index] = cond
 	end
-	self.removeEntry = function(entry)
-		entry = entry or #self.entries
-		table.remove(self.entries, entry)
-		if #self.entries == 0 then
-			self.addEntry()
-		end
+	
+	-- Set blocks
+	self.setEntries = function(data, no_warn)
+		self.schedule.entries = ENTRIES(data, no_warn)
 	end
-	self.removeConditionGroup = function(entry, group)
-		entry = entry or #self.entries
-		group = group or #self.entries[entry].conditions
-		table.remove(self.entries[entry].conditions, group)
-		if #self.entries[entry].conditions == 0 then
-			self.addConditionGroup()
-		end
+	self.setEntry = function(entry_id, instruction, conditions, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		local entry = SCHEDULE_BLOCKS_VALIDATE.ENTRY({instruction=instruction,conditions=conditions}, no_warn)
+		self.schedule.entries[entry_id] = entry
 	end
-	self.removeCondition = function(entry, group, cond)
-		entry = entry or #self.entries
-		group = group or #self.entries[entry].conditions
-		cond = cond or #self.entries[entry].conditions[group]
-		table.remove (self.entries[entry].conditions[group], cond)
-		if #self.entries[entry].conditions[group] == 0 then
-			table.remove(self.entries[entry].conditions,group)
-		end
-		if #self.entries[entry].conditions == 0 then
-			self.addConditionGroup()
-		end
+	self.setInstruction = function(entry_id, id, data, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		local instruction = SCHEDULE_BLOCKS_VALIDATE.INSTRUCTION({id=id,data=data}, no_warn)
+		self.schedule.entries[entry_id].instruction = instruction
 	end
+	self.setConditions = function(entry_id, data, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		local conditions = SCHEDULE_BLOCKS_VALIDATE.CONDITIONS(data, no_warn)
+		self.schedule.entries[entry_id].conditions = conditions
+	end
+	self.setConditionGroup = function(entry_id, group_id, data, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		group_id = tonumber(group_id) or #self.schedule.entries[entry_id]
+		range(group_id, 1, #self.schedule.entries[entry_id])
+		local group = SCHEDULE_BLOCKS_VALIDATE.CONDITION_GROUP(data, no_warn)
+		self.schedule.entries[entry_id][group_id] = group
+	end
+	self.setCondition = function(entry_id, group_id, cond_id, id, data, no_warn)
+		entry_id = tonumber(entry_id) or #self.schedule.entries
+		range(entry_id, 1, #self.schedule.entries)
+		group_id = tonumber(group_id) or #self.schedule.entries[entry_id]
+		range(group_id, 1, #self.schedule.entries[entry_id])
+		cond_id = tonumber(cond_id) or #self.schedule.entries[entry_id][group_id]
+		range(cond_id, 1, #self.schedule.entries[entry_id][group_id])
+		local condition = SCHEDULE_BLOCKS_VALIDATE.CONDITION({id=id,data=data}, no_warn)
+		self.schedule.entries[entry_id][group_id][cond_id] = condition
+	end
+	
+	self.toStation = function(station)
+		Schedule.toStation(self, station)
+	end
+	self.toJson = function()
+		return Schedule.toJson(self)
+	end
+	
+	self.validate(true)
 	
 	setmetatable(self, {
-	__tostring = function(self)
-		return string.format('Schedule(%s) Entries: %i', tostring(self.cyclic), #self.entries)
-	end,
-    __len = function(self) return #self.entries end
+		__tostring = function(self)
+			return string.format("%s %s", type(self), Schedule.toJson(self))
+		end,
+		__type = "Create Train Schedule"
 	})
+
 	return self
 end
+function Schedule.toJson(schedule)
+	if schedule == nil then return "{}" end
+	return textutils.serializeJSON(schedule.schedule)
+end
+function Schedule.fromJson(tbl)
+	if tbl == nil then return Schedule() end
+	if type(tbl) == 'string' then
+		tbl = textutils.unserializeJSON(tbl)
+	end
+	local s = Schedule()
+	s.schedule = tbl
+	s.validate()
+	return s
+end
+lib.Schedule=setmetatable(Schedule,{__call=Schedule.new})
+
+function Schedule.fromStation(station)
+	local self = Schedule()
+	local result, err = pcall(peripheral.call, peripheral.getName(station.object), 'getSchedule')
+	if result then
+		self.schedule = err
+		self.validate(true)
+	else
+		warn2(_, "Can't load schedule from station '%s'. Reason: %s", station.name, err)
+	end
+	
+	return self
+end
+function Schedule.toStation(schedule, station)
+	if type(schedule) ~= "Create Train Schedule" then
+		local s = Schedule()
+		s.schedule = schedule
+		schedule = s
+	end
+	schedule.validate(true)
+	local result, err = pcall(peripheral.call, peripheral.getName(station.object), 'setSchedule', schedule.schedule)
+	if not result then
+		warn2(_, "Can't set schedule to station '%s'. Reason: %s", station.name, err)
+	end
+end
+
 
 return lib

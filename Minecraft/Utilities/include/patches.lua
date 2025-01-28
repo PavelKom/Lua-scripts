@@ -21,7 +21,6 @@ ipairs = function(t)
 end
 local raw_type = type
 type = function(t)
-	print('a')
 	local metatable = getmetatable(t)
     if metatable and metatable.__type then
 		if type(metatable.__type) == 'function' then -- If __type is function

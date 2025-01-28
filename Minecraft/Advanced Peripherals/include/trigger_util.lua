@@ -163,7 +163,7 @@ function Trigger:new(item1, math_op1, const1, op, item2, math_op2, const2, logic
 	
 	setmetatable(self, {
 	__tostring = function(self)
-		return textutils.serializeJSON(Trigger.toJson(self))
+		return Trigger.toJson(self)
 	end,
 	__type='Trigger',})
 	return self
@@ -187,7 +187,7 @@ function Trigger.fromJson(tbl)
 end
 function Trigger.toJson(trigger)
 	if trigger == nil then return nil end
-	return {
+	return textutils.serializeJSON({
 	item1=trigger.item1,
 	math_op1=trigger.math_op1,
 	const1=trigger.const1,
@@ -197,7 +197,7 @@ function Trigger.toJson(trigger)
 	const2=trigger.const2,
 	logic=trigger.logic,
 	trigger=Trigger.toJson(trigger.trigger)
-	}
+	})
 end
 lib.Trigger=setmetatable(Trigger,{__call=Trigger.new})
 --lib=setmetatable(lib,{__call=Trigger.new})
@@ -302,7 +302,7 @@ function CraftTask:new(item, isFluid, amount, batch, trigger)
 	
 	setmetatable(self, {
 	__tostring = function(self)
-		return textutils.serializeJSON(CraftTask.toJson(self))
+		return CraftTask.toJson(self)
 	end,
 	__type='CraftTask'})
 	return self
@@ -322,13 +322,13 @@ function CraftTask.fromJson(tbl)
 end
 function CraftTask.toJson(task)
 	if task == nil then return nil end
-	return {
+	return textutils.serializeJSON({
 	item=task.item,
 	isFluid=task.isFluid,
 	amount=task.amount,
 	batch=task.batch,
 	trigger=Trigger.toJson(task.trigger)
-	}
+	})
 end
 lib.CraftTask=setmetatable(CraftTask,{__call=CraftTask.new})
 
