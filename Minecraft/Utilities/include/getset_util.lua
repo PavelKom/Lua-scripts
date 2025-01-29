@@ -68,11 +68,12 @@ lib.CUSTOM_TYPE = function(name)
 end
 
 lib.VALIDATE_PERIPHERAL = function(name, peripheral_table, peripheral_name)
+	local _t = subtype(peripheral_table)
+	if name ~= nil and (name == "" or name == _t or type(name) ~= 'string') then name = nil end
 	if name and peripheral_table.__items[name] then
 		return nil, peripheral_table.__items[name]
 	end
 	-- Wrap or find peripheral
-	local _t = subtype(peripheral_table)
 	local object = name and peripheral.wrap(name) or peripheral.find(_t)
 	if object == nil then error("Can't connect to "..peripheral_name.." '"..name or _t.."'") end
 	-- If it already registered, return 

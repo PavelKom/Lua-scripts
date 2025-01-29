@@ -13,6 +13,7 @@ local expect, field = expect.expect, expect.field
 local lib = {}
 lib.Trigger = trigger.Trigger
 lib.CraftTask = trigger.CraftTask
+lib.SIDES = getset.SIDES
 
 local Peripheral = {}
 Peripheral.__items = {}

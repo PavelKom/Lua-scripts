@@ -16,9 +16,10 @@ lib.TASKRESULT = {
 	[-1] = 'conditions not met',
 	[-2] = 'already crafting',
 	[-3] = 'invalid task',
-	[-4] = 'item not craftable'
+	[-4] = 'item not craftable',
+	[-5] = 'excees'
 }
-setmetatable(lib.TASKRESULT, {__index = getset.GETTER_TO_UPPER(lib.TASKRESULT[1])})
+setmetatable(lib.TASKRESULT, {__index = lib.TASKRESULT[1]})
 
 lib.OP = {
 LT = 'LT',
@@ -245,24 +246,23 @@ function CraftTask:new(item, isFluid, amount, batch, trigger)
 		return self.trigger.test(bridge)
 	end
 	self.craft = function(bridge, callback)
-		
 		expect(2, callback, "function", "nil")
 		if not bridge.isItemCraftable(self.item) then
 			if callback then
-				callback(-4, self.item)
+				callback(-4, self.item, bridge)
 			end
 			return -4
 		end
 		if bridge.isItemCrafting(self.item) then -- Item already crafting
 			if callback then
-				callback(-2, self.item)
+				callback(-2, self.item, bridge)
 			end
 			return -2
 		end
 		local result = self.trigger.test(bridge)
 		if not result then -- Conditions not met
 			if callback then
-				callback(-1, self.item)
+				callback(-1, self.item, bridge)
 			end
 			return -1
 		end
@@ -273,7 +273,7 @@ function CraftTask:new(item, isFluid, amount, batch, trigger)
 			result = self.craftItem(bridge)
 		end
 		if callback then
-			callback(result, self.item)
+			callback(result, self.item, bridge)
 		end
 		return result
 	end

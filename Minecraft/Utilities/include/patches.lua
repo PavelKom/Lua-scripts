@@ -3,6 +3,17 @@
 	Version: 0.2
 	Patch some broken or non-existed methods
 ]]
+
+if not string.find(package.path, "./src/?.lua", 1, true) then
+	package.path = package.path..';./src/?.lua'
+end
+if not string.find(package.path, "./lib/?.lua", 1, true) then
+	package.path = package.path..';./lib/?.lua'
+end
+if not string.find(package.path, "./include/?.lua", 1, true) then
+	package.path = package.path..';./include/?.lua'
+end
+
 -- TABLE
 
 --[[
@@ -63,7 +74,8 @@ local expect, field = expect.expect, expect.field
 	Patch for table library. Add deep copy function
 	https://gist.github.com/tylerneylon/81333721109155b2d244
 
-	table.copy(t: table)
+	@tparam table obj Original table
+	@treturn table Copy of obj
 ]]
 function table.copy(obj, seen)
   if type(obj) ~= 'table' then return obj end
@@ -78,6 +90,11 @@ end
 --[[
 	Add table equality function
 	https://web.archive.org/web/20131225070434/http://snippets.luacode.org/snippets/Deep_Comparison_of_Two_Values_3
+	
+	@tparam table t1 First table
+	@tparam table t1 Second table
+	@tparam[opt=false] boolean Ignore metatables
+	@treturn boolean Equality
 ]]
 function table.equal(t1,t2,ignore_mt)
 	local ty1 = type(t1)
@@ -104,13 +121,13 @@ end
 --[[
 	Patch for string library. Add split function
 	https://stackoverflow.com/a/7615129/
-
-	string.split(inputstr: string[, sep: string])
+	
+	@tparam string inputstr String for splitting
+	@tparam[opt="%s"] string sep Separator
+	@treturn {string,...} Splitted string
 ]]
 function string.split(inputstr, sep)
-  if sep == nil then
-    sep = "%s"
-  end
+  sep = sep or "%s"
   local t = {}
   for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
     table.insert(t, str)
@@ -124,7 +141,16 @@ local tab = {
 ["^"] = "%^",["$"] = "%$",
 }
 
+--[[
+	Replace function for sring. WITHOUT REGEX
+
+	@tparam string inputstr String 
+	@tparam string non_pattern Search string 
+	@tparam[opt=""] string repl Replace string
+	@treturn string resulted string
+]]
 function string.replace(inputstr, non_pattern, repl)
+	repl = repl or ""
 	for k, v in pairs(tab) do
 		if string.find(non_pattern, v) then
 			non_pattern = string.gsub(non_pattern, v, "%"..v)
@@ -134,7 +160,7 @@ function string.replace(inputstr, non_pattern, repl)
 end
 
 
-
+-- Create MC and CC versions for peripheral utils checks
 if not _G._MC_VERSION or not _G._CC_VERSION then
 	local _v = string.split(string.gsub(_HOST, "[%)%(]", ""), " ")
 	--major.minor.build
@@ -148,7 +174,14 @@ end
 
 -- MATH
 
--- Clamn value between other two values
+--[[
+	Clamn value between other two values
+	
+	@tparam number value The value to check
+	@tparam[opt=0] number minimum Minimum value
+	@tparam[opt=1] number maximum Maximum value
+	@treturn number Clamped value
+]]
 function math.clamp(value, minimum, maximum)
     expect(1, value, "number")
     expect(2, minimum, "number", "nil")
@@ -167,35 +200,83 @@ for i=0, 15 do
 	colors[string.format("%x",i)] = 2 ^ i
 	colours[string.format("%x",i)] = 2 ^ i
 end
--- Convert 0-255 channel to 0.0-1.0
+
+--[[
+	Convert 0-255 channel to 0.0-1.0
+	
+	@tparam number value Absolute value
+	@treturn number Channel value
+]]
 function colors.norm(value) -- value: number
     expect(1, value, "number")
 	return math.clamp(value,0, 255) / 255
 end
--- Convert 0.0-1.0 channel to 0-255
+
+--[[
+	Convert 0.0-1.0 channel to 0-255
+	
+	@tparam number value Channel value
+	@treturn number Absolute value
+]]
 function colors.abs(value)
     expect(1, value, "number")
 	return math.clamp(value,0, 1) * 255
 end
--- Convert 0-255 rgb to 0.0-1.0
+
+--[[
+	Convert 0-255 rgb to 0.0-1.0
+	
+	@tparam number r Red absolute value
+	@tparam number g Green absolute value
+	@tparam number b Blue absolute value
+	@treturn number Red channel value
+	@treturn number Green channel value
+	@treturn number Blue channel value
+]]
 function colors.normRGB(r,g,b)
     expect(1, r, "number")
     expect(2, g, "number")
     expect(3, b, "number")
 	return math.clamp(r,0, 255) / 255, math.clamp(g,0, 255) / 255, math.clamp(b,0, 255) / 255
 end
--- Convert 0.0-1.0 rgb to 0-255
+
+--[[
+	Convert 0.0-1.0 rgb to 0-255
+	
+	@tparam number r Red channel value
+	@tparam number g Green channel value
+	@tparam number b Blue channel value
+	@treturn number Red absolute value
+	@treturn number Green absolute value
+	@treturn number Blue absolute value
+]]
 function colors.absRGB(r,g,b)
     expect(1, r, "number")
     expect(2, g, "number")
     expect(3, b, "number")
 	return math.clamp(r,0, 1) * 255, math.clamp(g,0, 1) * 255, math.clamp(b,0, 1) * 255
 end
--- Get hex from 0-255 rgb
+
+--[[
+	Pack hex from 0-255 rgb
+	
+	@tparam number r Red absolute value
+	@tparam number g Green absolute value
+	@tparam number b Blue absolute value
+	@treturn number Hex 24bit number
+]]
 function colors.packAbsRGB(r,g,b)
 	return colors.packRGB(colors.normRGB(r,g,b))
 end
--- Get 0-255 rgb from hex
+
+--[[
+	Unpack hex to 0-255 rgb
+	
+	@tparam number hex Hex 24bit number
+	@treturn number Red absolute value
+	@treturn number Green absolute value
+	@treturn number Blue absolute value
+]]
 function colors.unpackAbsRGB(hex)
 	return colors.absRGB(colors.packRGB(hex))
 end

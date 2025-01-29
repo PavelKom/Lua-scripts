@@ -21,6 +21,9 @@ keys_for_delete = [
 lantanoid = [i for i in range(57,72)] # 57-71
 actinoid  = [i for i in range(89,104)] # 89-103
 
+# Me Bridge is a bit buggy when working with Alchemistry fission and fusion reactors (cannot load/unload items correctly, tested on 1.19.2). RS Bridge is used instead, and ME is used to obtain the main element using Dissolver. 
+for_me_bridge = [6]
+
 x_offset = 0
 y_offset = 0
 x_l_a_offset = 5
@@ -42,6 +45,7 @@ for element in d2:
     new_data = {}
     index = element['atomic_number']
     new_data['atomic_number'] = index
+    new_data['bridge'] = 'me' if index in for_me_bridge else 'rs'
     new_data['name'] = 'chemlib:' + element['name'].replace('chemlib:','')
     new_data['abbreviation'] = element['abbreviation']
     # Add space for elements with 1 character in label
@@ -70,20 +74,20 @@ for i, v in new_data_dict.items():
     # Fusion chamber
     if i >= main_element_id+2: # Oxygen, Fluorine, ...
         new_data_dict[i]['required'] = [
-            'chemlib:' + new_data_dict[i-main_element_id]['name'].replace('chemlib:',''),
-            'chemlib:' + new_data_dict[main_element_id]['name'].replace('chemlib:','')
+            [i-main_element_id, new_data_dict[i-main_element_id]['name']],
+            [main_element_id, new_data_dict[main_element_id]['name']]
         ]
     # Fission chamber
     elif i != main_element_id and i < main_element_id+2: # Hydrogen - Boron, Nitrogen
         new_data_dict[i]['required'] = [
-            'chemlib:' + new_data_dict[i*2]['name'].replace('chemlib:',''),
+            [i*2, new_data_dict[i*2]['name']],
         ]
 
 new_data_list = []
 for i, v in new_data_dict.items():
     new_data_list.append(v)
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'  ',
     'x':new_data_dict[lantanoid[0]-1]['x']+2,
     'y':new_data_dict[lantanoid[0]-1]['y'],
@@ -91,7 +95,7 @@ new_data_list.append({
     'comment':'Patch between Ba(56) and Hf(72)',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'  ',
     'x':new_data_dict[lantanoid[0]]['x']-2,
     'y':new_data_dict[lantanoid[0]-1]['y'],
@@ -99,7 +103,7 @@ new_data_list.append({
     'comment':'Color label before La(57)',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'  ',
     'x':new_data_dict[actinoid[0]-1]['x']+2,
     'y':new_data_dict[actinoid[0]-1]['y'],
@@ -107,7 +111,7 @@ new_data_list.append({
     'comment':'Patch between Ra(88) and Rf(104)',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'  ',
     'x':new_data_dict[actinoid[0]]['x']-2,
     'y':new_data_dict[actinoid[0]-1]['y'],
@@ -115,35 +119,35 @@ new_data_list.append({
     'comment':'Color label before Ac(89)',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'Cannot be crafted',
     'x':1 + x_offset,
     'y':new_data_dict[actinoid[0]-1]['y']+2,
     'color': 'red',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'Crafting',
     'x':1 + x_offset,
     'y':new_data_dict[actinoid[0]-1]['y']+3,
     'color': 'yellow',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'No craft needed',
     'x':1 + x_offset,
     'y':new_data_dict[actinoid[0]-1]['y']+4,
     'color': 'green',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'Lantanide',
     'x':1 + x_offset,
     'y':new_data_dict[actinoid[0]-1]['y']+5,
     'color': 'blue',
     })
 new_data_list.append({
-    'atomic_number': 0,
+    #'atomic_number': 0,
     'abbreviation':'Actinide',
     'x':1 + x_offset,
     'y':new_data_dict[actinoid[0]-1]['y']+5,
