@@ -118,6 +118,34 @@ function string.split(inputstr, sep)
   return t
 end
 
+local tab = {
+["("] = "%(",[")"] = "%)",["."] = "%.",["%"] = "%%",["+"] = "%+",
+["-"] = "%-",["*"] = "%*",["?"] = "%?",["["] = "%[",["]"] = "%]",
+["^"] = "%^",["$"] = "%$",
+}
+
+function string.replace(inputstr, non_pattern, repl)
+	for k, v in pairs(tab) do
+		if string.find(non_pattern, v) then
+			non_pattern = string.gsub(non_pattern, v, "%"..v)
+		end
+	end
+	return string.gsub(inputstr, non_pattern, repl)
+end
+
+
+
+if not _G._MC_VERSION or not _G._CC_VERSION then
+	local _v = string.split(string.gsub(_HOST, "[%)%(]", ""), " ")
+	--major.minor.build
+	_G._CC_VERSION = _v[2]
+	_G._MC_VERSION = _v[4]
+	_v = string.split(_CC_VERSION, ".")
+	_G._CC_MAJOR, _G._CC_MINOR, _G._CC_BUILD = tonumber(_v[1]), tonumber(_v[2]), tonumber(_v[3])
+	_v = string.split(_MC_VERSION, ".")
+	_G._MC_MAJOR, _G._MC_MINOR, _G._MC_BUILD = tonumber(_v[1]), tonumber(_v[2]), tonumber(_v[3])
+end
+
 -- MATH
 
 -- Clamn value between other two values

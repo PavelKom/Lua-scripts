@@ -4,11 +4,23 @@
 	Automatically wrap peripherals based on their name
 ]]
 
+
+
 local getset = require "getset_util"
 local expect = require "cc.expect"
 local expect = expect.expect
 
 local lib = {}
+
+
+local function get_file_name(file)
+      return file:match("^.+/(.+)$")
+end
+local _path = debug.getinfo(1,'S').source
+local _me = get_file_name(_path)
+_path = string.sub(_path, 2, #_path-#_me)
+_me = string.gsub(_me, ".lua", "")
+
 
 lib.libraries = {}
 lib.peripherals = {}
@@ -17,20 +29,43 @@ lib.utilities = {}
 -- Register libraries, peripherals and utilities
 lib.load_libraries = function(path)
 	local paths = fs.find(path)
+	print(path)
 	for _, p in pairs(paths) do
-		local l = require(p)
-		if type(l) == 'library' and lib.libraries[subtype(l)] == nil then
-			for k, v in pairs(l) do
-				if type(v) == 'peripheral' and lib.peripherals[k] == nil then
-					lib.peripherals[subtype(v)] = v
-				elseif type(v) == 'utility' and lib.utilities[k] == nil then
-					lib.utilities[subtype(v)] = v
+		local _p = string.sub(p, #_path)
+		_p = string.gsub(_p, ".lua", "")
+		if _p ~= _me then
+			local l = require(_p)
+			print(p, l, type(l))
+			if type(l) == 'library' and lib.libraries[subtype(l)] == nil then
+				print('    ', p)
+				for k, v in pairs(l) do
+					if type(v) == 'peripheral' and lib.peripherals[k] == nil then
+						lib.peripherals[subtype(v)] = setmetatable(v, getmetatable(v))
+					elseif type(v) == 'utility' and lib.utilities[k] == nil then
+						lib.utilities[subtype(v)] = setmetatable(v, getmetatable(v))
+					end
 				end
+				lib.libraries[subtype(l)] = setmetatable(l, getmetatable(l))
 			end
-			lib.libraries[subtype(l)] = l
 		end
 	end
 end
+lib.print_info = function()
+	print("Libraries:")
+	for k, v in pairs(lib.libraries) do
+		print("    ",k,":",v,":", type(v))
+	end
+	print("Peripherals:")
+	for k, v in pairs(lib.peripherals) do
+		print("    ",k,":",v,":", type(v))
+	end
+	print("Utilities:")
+	for k, v in pairs(lib.utilities) do
+		print("    ",k,":",v,":", type(v))
+	end
+end
+
+
 lib.reset_libraries = function()
 	lib.libraries = {}
 	lib.peripherals = {}
@@ -67,7 +102,7 @@ lib.test_network = function()
 			print("TYPE: "..type(err))
 		end
 	end
-	print("End of testing peripherals")
+	print("end of testing peripherals")
 end
 
 -- Inventory. Non-specific inventory, like minecraft:chest, minecraft:barrel and others
@@ -291,10 +326,10 @@ lib.EnergyStorage=setmetatable(EnergyStorage,{__call=EnergyStorage.new,__type = 
 
 
 
+lib.load_libraries(_path.."*.lua")
+--lib.load_libraries("include/*.lua")
+--lib.load_libraries("lib/*.lua")
 
+_G.auto_wrapper = _G.auto_wrapper or lib
 
-
-lib.load_libraries("*.lua")
-lib.load_libraries("include/*.lua")
-lib.load_libraries("lib/*.lua")
 return lib

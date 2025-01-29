@@ -318,7 +318,7 @@ end
 TrainStation.delete = function(name)
 	if name then TrainStation.__items[name] = nil end
 end
-lib.TrainStation=setmetatable(TrainStation,{__call=TrainStation.new,__type = "peripheral",__subtype="Create_Station",}})
+lib.TrainStation=setmetatable(TrainStation,{__call=TrainStation.new,__type = "peripheral",__subtype="Create_Station",})
 
 lib.INSTRUCTION_NAMES = {
 -- Create

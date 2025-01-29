@@ -7,6 +7,11 @@
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
+
+if _MC_VERSION and _MC_MINOR ~= 19 and _MC_BUILD ~= 2 then
+	error("Powah Energy Cell peripheral only for Minecraft 1.19.2")
+end
+
 local lib = {}
 
 local Peripheral = {}

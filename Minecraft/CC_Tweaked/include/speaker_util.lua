@@ -68,6 +68,9 @@ function testDefaultPeripheral()
 		Peripheral()
 	end
 end
+
+return lib
+--[[
 ----------- OLD API
 function.lib:Speakers()
 	local def_type = 'speaker'
@@ -150,7 +153,7 @@ function lib.subfolders(tbl, path_tbl, original_path)
 	lib.subfolders(tbl[_p], path_tbl, original_path)
 end
 
---[[
+
 In .minecraft/assets/indexes/<mc_version>.json find:
 "minecraft/sounds.json": {
 	"hash": "<hash>",
@@ -165,6 +168,7 @@ Goto .minecraft/assets/objects/a1 (a1 the first two characters in hash).
 Copy a1daff5daa55f870c29becece97fc88e3da0b18e file to computer folder, rename (like sounds.json)
 Create  SoundList() object, it's autogenerate sounds.txt
 ]]
+--[[
 function lib:SoundList()
 	local self = {files = {}, paths = {}}
 	
@@ -205,8 +209,8 @@ function lib:SoundList()
 		local _path = string.split(path, '.') or {}
 		local _tbl = table.copy(self.paths)
 		while #_path > 0 do
-			if not _tbl[_path[1]] then error('Invalid path') end
-			_tbl = _tbl[_path[1]]
+			if not _tbl[_path[1] ] then error('Invalid path') end
+			_tbl = _tbl[_path[1] ]
 			table.remove(_path,1)
 		end
 		local _f, _d = {}, {}
@@ -264,3 +268,4 @@ function lib.generateSoundList(path, path2)
 end
 
 return lib
+]]

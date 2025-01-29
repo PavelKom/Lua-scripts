@@ -7,6 +7,11 @@
 	TODO: Add manual
 ]]
 getset = require 'getset_util'
+
+if _MC_VERSION and _MC_MINOR ~= 16 then
+	error("Immersive Engineering Redstone Probe peripheral only for Minecraft 1.16")
+end
+
 local lib = {}
 
 local Peripheral = {}

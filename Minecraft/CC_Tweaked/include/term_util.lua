@@ -8,8 +8,8 @@
 getset = require 'getset_util'
 
 local lib = {}
-Terminal = {}
-Peripheral.__items = {}
+local Terminal = {}
+Terminal.__items = {}
 Terminal.new = function()
 	if Peripheral.default then return Peripheral.default end
 	local self = {}
