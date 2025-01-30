@@ -56,13 +56,31 @@ if not _G.subtype then
 		if metatable and metatable.__subtype then
 			if type(metatable.__subtype) == 'function' then -- If __subtype is function
 				return metatable.__subtype(t)
-			else -- If type not function but callable
+			else -- If subtype not function but callable
 				local t = getmetatable(metatable.__subtype)
 				if t and t.__call then
 					return metatable.__subtype(t)
 				end
 			end
 			return metatable.__subtype
+		end
+		return type(t)
+	end
+end
+
+if not _G.name then
+	_G.name = function(t)
+		local metatable = getmetatable(t)
+		if metatable and metatable.__name then
+			if type(metatable.__name) == 'function' then -- If __name is function
+				return metatable.__name(t)
+			else -- If name not function but callable
+				local t = getmetatable(metatable.__name)
+				if t and t.__call then
+					return metatable.__name(t)
+				end
+			end
+			return metatable.__name
 		end
 		return type(t)
 	end
@@ -93,7 +111,7 @@ end
 	
 	@tparam table t1 First table
 	@tparam table t1 Second table
-	@tparam[opt=false] boolean Ignore metatables
+	@tparam[opt=false] boolean ignore_mt Ignore metatables
 	@treturn boolean Equality
 ]]
 function table.equal(t1,t2,ignore_mt)

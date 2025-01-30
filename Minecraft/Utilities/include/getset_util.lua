@@ -56,7 +56,11 @@
 	
 ]]
 
-patches = require 'patches'
+local patches = require 'patches'
+
+local expect = require "cc.expect"
+local expect, field = expect.expect, expect.field
+
 local lib = {}
 
 -- Not working
@@ -543,6 +547,55 @@ function lib.formattedTable(tbl)
 	result = result.."}"
 	return result
 end
+
+--[[
+	Create metatable for class-like objects. Experimental!!!
+	@tparam table TABLE Class constructor
+	@tparam[opt=nil] string|function _type Custom type for type()
+	@tparam[opt=nil] string|function _subtype Custom subtype for subtype()
+	@tparam[opt=nil] string|function _name Custom name for name()
+	@treturn table Table with constructed metatable
+]]
+function lib.CONSTRUCT_META_CLASS_EX(TABLE, _type, _subtype, _name)
+	return setmetatable(TABLE, {
+	__call = function(...) return TABLE:new(...) end,
+	__index = function(self, index, ...)
+		print('get/call', self,index,...)
+		if TABLE.__caller[index] then
+			return function(...) return TABLE.__caller[index](self, ...) end
+		elseif TABLE.__getter[index] then
+			return TABLE.__getter[index](self, ...)
+		else
+			error("Can't get property /call method "..subtype(self).."."..tostring(index).."'")
+		end
+	end,
+	__newindex = function(self, index, ...)
+		print('set', self,index,...)
+		if TABLE.__setter[index] then
+			return TABLE.__setter[index](self, ...)
+		else
+			error("Can't set property "..subtype(self).."."..tostring(index).."'")
+		end
+	end,
+	__type = _type or "peripheral wrapper",
+	__subtype = _subtype,
+	__name = _name,
+})
+end
+
+function lib.VALIDATE_PERIPHERAL_EX(name, peripheral_name)
+	lib.printTable(name)
+	expect(1, name, "string", "nil")
+	expect(2, peripheral_name, "string")
+	if name == "" then name = nil end
+	local p = name and peripheral.wrap(name) or peripheral.find(peripheral_name)
+	if not p then error("[VALIDATE_PERIPHERAL_EX] Can't connect to "..peripheral_name.." '"..(name or peripheral_name).."'") end
+	if peripheral_name ~= peripheral.getType(p) then
+		error("[VALIDATE_PERIPHERAL_EX] Wrong peripheral type. Get '"..peripheral.getType(p).."' expect '"..peripheral_name.."'")
+	end
+	return p
+end
+
 
 
 
