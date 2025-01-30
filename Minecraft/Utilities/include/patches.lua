@@ -4,6 +4,8 @@
 	Patch some broken or non-existed methods
 ]]
 
+if _G._PATCHED_BY_PAVELKOM then return end
+
 if not string.find(package.path, "./src/?.lua", 1, true) then
 	package.path = package.path..';./src/?.lua'
 end
@@ -305,3 +307,5 @@ colours.normRGB = colors.normRGB
 colours.absRGB = colors.absRGB
 colours.packAbsRGB = colors.packAbsRGB
 colours.unpackAbsRGB = colors.unpackAbsRGB
+
+_G._PATCHED_BY_PAVELKOM = true
