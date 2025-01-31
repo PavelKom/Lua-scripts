@@ -1,7 +1,7 @@
 --[[
 Extended Peripheral Framework
 Author: PavelKom
-Version 2.1b
+Version 2.2
 	
 Library for extanding wrapped peripheral by adding get/set properties and other.
 
@@ -55,7 +55,8 @@ lib = setmetatable(lib, __call=Peripheral.__call, __type="library", __subtype="p
 return lib
 
 
-@changed 2.1b Added pos sub-table
+@changed 2.1b Added pos sub-table.
+@changed 2.2 Added pallete sub-table. Tested: pos and palette subtables.
 ]]
 
 -- Patches
@@ -73,7 +74,6 @@ settings.define("_EFP_GLOBAL", {
 if settings.get("_EFP_GLOBAL", false) and _G.epf then
 	return _G.epf
 end
-	
 
 local epf = {}
 
@@ -380,7 +380,7 @@ function epf.simpleNew(tbl)
 		tbl.__names = tbl.__names or {}
 		tbl.__names[name] = self
 		
-		return self
+		return setmetatable(self, _m)
 	end
 end
 
@@ -416,10 +416,10 @@ end
 	@tparam function getter Coordinate getter function.
 	@tparam function|nil setter Coordinate setter function
 	@tparam[opt={'x','y'}] {string,...} keys Coordinate names. Must be unique!
-	@tparam[opt=false] boolean static pos table is static ( call getter and setter with 'self' arg)
-	@treturn table pos sub-table for 
+	@tparam[opt=nil] table cfg Config array-like table. Allowed configs: 'static'
+	@treturn table pos sub-table for nD movement
 ]]
-function epf.subtablePos(tbl, getter, setter, keys, static)
+function epf.subtablePos(tbl, getter, setter, keys, cfg)
 	assert(tbl, "Peripheral wrapper not specific")
 	assert(type(getter) == 'function', "Position getter not specific")
 	assert(setter == nil or type(setter) == 'function',
@@ -427,140 +427,129 @@ function epf.subtablePos(tbl, getter, setter, keys, static)
 	
 	-- Create pos sub-table
 	local pos = {__keys = keys  or {'x', 'y'}, __cur_obj=nil}
+	pos.__reverse = {}
+	for k,v in pairs(pos.__keys) do
+		pos.__reverse[v] = k
+	end
+	local _m = {
+		__super=tbl, -- Connect to tbl
+		__len=function(self) return #self.__keys end,
+	}
+	local _cfg = {}
+	for k,v in pairs(cfg or {}) do _cfg[v] = k end
+	-- Create functions from scrap
+	
+	-- Convert index to array
+	local index_table = "local _ti = {};if type(index) == 'string' then _ti = string.split(index);elseif type(index) == 'number' then _ti[#_ti+1] = self.__keys[index] or error('Invalid position index'..tostring(index));elseif type(index) == 'table' then _ti = {table.unpack(index)} end\n"
+	
+	-- Check call is static
+	local _static = _cfg.static and "self.__cur_obj" or ""
+	
+	-- Getter
+	local _getter = "local args={...};getter=args[1];setter=args[2];return function(self, index) "..index_table.."local _r = {};local _p = {getter(".._static..")}\nfor _, v2 in pairs(_ti) do for k,v in pairs(_p) do if self.__keys[k] == v2 then  _r[#_r+1] = v; break; end end end\nprint(index, table.unpack(_ti))\nif #_r == 1 then _r = _r[1] end return _r; end"
+	
+	-- Ipairs. Iterate coordinates by position
+	local _ipairs = ", function(self) local _pos = {getter(".._static..")}\n--REPLACEMEFORPAIRS--\nlocal key, value\nreturn function() key, value = next(_pos, key); if key == nil then return nil, nil; end return key, value; end end"
+	-- Quickfix for pairs
+	local _pairs = string.replace(_ipairs, "--REPLACEMEFORPAIRS--",
+	"for k,v in pairs(_pos) do if type(k) == 'number' then _pos[self.__keys[k]] = v; _pos[k] = nil end end"
+	)
+	local _setter, _caller = "", ""
+	if setter then -- Add setter and caller
+		_setter=", function(self, index, value) "..index_table.."if type(value) ~= 'table' then value = {value}; end\nlocal _p = {getter(".._static..")}; local _i = 1\nfor k,v in pairs(_p) do for _,v in pairs(_ti) do if self.__keys[k] == v then _p[k] = value[v] or value[_i] or _p[k];_i = _i + 1;end end end\nsetter("..(_cfg.static and "self.__cur_obj, " or "").."table.unpack(_p)) end"
+		
+		_caller=", function(self, ...) local _arg = {...}; local index = '';if #_arg == 0 then for k,v in ipairs(self.__keys) do _arg[k] = 1;index = index..v; end\nelseif type(_arg[1]) == 'table' then _arg=_arg[1]; for k,v in ipairs(self.__keys) do if _arg[k] or _arg[v] then _arg[k] = _arg[k] or _arg[v];_arg[v] = nil;index = index..v; end end\nelse for k=1,#_arg do index = index..self.__keys[k]; end end self[index] = _arg; end"
+	end
+	
+	local buffer = _getter.._ipairs.._pairs.._setter.._caller
+	local _f, err = load(buffer)
+	if not _f then error(err) end
+	_m.__index,_m.__ipairs,_m.__pairs,_m.__newindex,_m.__call = _f(getter, setter)
+	
+	return setmetatable(pos, _m)
+end
+
+local colorNames = {
+'white','orange','magenta','lightBlue',
+'yellow','lime','pink','gray',
+'lightGray','cyan','purple','blue',
+'brown','green','red','black'
+}
+
+--[[
+	Add subtable for manipulating color palette.
+	@tparam table tbl Wrapped peripheral or Peripheral wrapper
+	@tparam function getter Palette color getter function.
+	@tparam function|nil setter Palette color setter function
+	@tparam[opt=nil] {string,...} static pos table is static ( call getter and setter with 'self' arg)
+	@treturn table palette sub-table for working with color palette
+]]
+function epf.subtablePalette(tbl, getter, setter, cfg)
+	assert(tbl, "Peripheral wrapper not specific")
+	assert(type(getter) == 'function', "Palette getter not specific")
+	assert(setter == nil or type(setter) == 'function',
+		"Palette setter not nil/function")
+	
+	-- Create pos sub-table
+	local palette = {__cur_obj=nil}
+	
 	local _m = {
 		__super=tbl, -- Connect to tbl
 	}
-	-- For avoiding re-creating pos-table for every object
-	-- STATIC
-	if static then
-		-- obj = Test()
-		-- obj.pos.x -> Test.pos_getter(self,'x') return self.getter().x end
-		_m.__index = function(self, index)
-			local _p = {getter(self.__cur_obj)} -- {x,y,z,...}. 
-			local _r = {}
-			for k,v in pairs(_p) do -- pos.xyz
-				if string.find(index, self.__keys[k]) then
-					_r[#_r+1] = v
-				end
-			end
-			if #_r == 1 then _r = _r[1] end -- pos.x
-			return _r
-		end
-		-- Iterate coordinates by name
-		_m.__pairs = function(self)
-			local _pos = {getter(self.__cur_obj)} -- {x,y,z,...}
-			for k,v in pairs(_pos) do --{'x'=x,'y'=y,...}
-				_pos[self.__keys[k]] = v
-				_pos[k] = nil
-			end
-			local key, value
-			return function()
-				key, value = next(_pos, key)
-				return key, value
-			end
-		end
-		-- Iterate coordinates by position
-		_m.__ipairs = function(self)
-			local _pos = {getter(self.__cur_obj)} -- {x,y,z,...}
-			local key, value
-			return function()
-				key, value = next(_pos, key)
-				return key, value
-			end
-		end
-		if setter then
-			_m.__newindex = function(self, index, value)
-				if type('value') ~= 'table' then value = {value} end
-				local _p = {getter(self.__cur_obj)}
-				local _i = 1
-				for k,v in pairs(_p) do
-					if string.find(index, self.__keys[k]) then
-						_p[k] = value[self.__keys[k]] or value[_i] or _p[k] -- Change values for specific keys
-						_i = _i + 1
-					end
-				end
-				setter(self.__cur_obj, table.unpack(_p))
-			end
-		end
-	else -- NON-STATIC
-		-- obj = Test()
-		-- obj.pos.x -> getter().x
-		_m.__index = function(self, index)
-			local _p = {getter()} -- {x,y,z,...}. 
-			local _r = {}
-			for k,v in pairs(_p) do -- pos.xyz
-				if string.find(index, self.__keys[k]) then
-					_r[#_r+1] = v
-				end
-			end
-			if #_r == 1 then _r = _r[1] end -- pos.x
-			return _r
-		end
-		_m.__pairs = function(self)
-			local _pos = {getter()} -- {x,y,z,...}
-			for k,v in pairs(_pos) do --{'x'=x,'y'=y,...}
-				_pos[self.__keys[k]] = v
-				_pos[k] = nil
-			end
-			local key, value
-			return function()
-				key, value = next(_pos, key)
-				return key, value
-			end
-		end
-		_m.__ipairs = function(self)
-			local _pos = {getter()} -- {x,y,z,...}
-			local key, value
-			return function()
-				key, value = next(_pos, key)
-				return key, value
-			end
-		end
-		if setter then
-			_m.__newindex = function(self, index, value)
-				if type('value') ~= 'table' then value = {value} end
-				local _p = {getter()}
-				local _i = 1
-				for k,v in pairs(_p) do
-					if string.find(index, self.__keys[k]) then
-						_p[k] = value[self.__keys[k]] or value[_i] or _p[k] -- Change values for specific keys
-						_i = _i + 1
-					end
-				end
-				setter(table.unpack(_p))
-			end
-		end
+	
+	local _cfg = {}
+	for k,v in pairs(cfg or {}) do _cfg[v] = k end
+	-- Create functions from scrap
+	
+	-- Check index is string
+	local index_string = "local _index = index; if type(_index) == 'string' then _index = colors[string.lower(tostring(index))] or colours[string.lower(tostring(index))]; end assert(not not index, 'Invalid colorname for palette subtable'..index)\n"
+	
+	-- Check call is static
+	local _static = _cfg.static and "self.__cur_obj, " or ""
+	
+	local _return = "local res = {getter(".._static.."index)};"
+	if _cfg.hex then _return=_return.."res.hex=colors.packRGB(getter(".._static.."index));" end
+	if _cfg.named then _return=_return.."res.r,res.g,res.b=getter(".._static.."index);" end
+	if _cfg.abs then _return=_return.."res[-1],res[-2],res[-3]=colors.absRGB(getter(".._static.."index));" end
+	if _cfg.abs_named then _return=_return.."res._r,res._g,res._b=colors.absRGB(getter(".._static.."index));" end
+	if _cfg.no_def and (_cfg.hex or _cfg.named or _cfg.abs or _cfg.abs_named) then
+		_return=_return.."res[1]=nil;res[2]=nil;res[3]=nil;"
 	end
+	
+	-- Getter
+	local _getter = "local args={...};getter=args[1];setter=args[2];colorNames=args[3]; return function(self, index) "..index_string.._return.."return res end" 
+	local _ipairs = ", function(self) local i, key, value = 0; return function()\nif i > 15 then return nil,nil end\nkey = 2^i; value={getter(".._static.."key)}; i=i+1; return key,value end end"
+	local _pairs = string.replace(_ipairs, 'return key,value', 'return colorNames[i], value')
+	local _setter, _caller = "", ""
 	if setter then
-		_m.__call = function(self, ...)
-			local _arg = {...}
-			local index = ""
-			if #_arg == 0 then -- pos() == pos(1,1,1,...)
-				for k,v in ipairs(self.__keys) do
-					_arg[k] = 1
-					index = index..v
-				end
-			elseif type(_arg[1]) == 'table' then -- pos({'x'=7,'y'=2})
-				for k,v in ipairs(self.__keys) do
-					if _arg[k] or _arg[v] then -- [1]=7 or 'x'=7
-						_arg[k] = _arg[k] or _arg[v] -- [1] = [1] or ['x']
-						_arg[v] = nil -- ['x']=nil
-						index = index..v
-					end
-				end
-			else -- pos(7,2)
-				for k,v in pairs(_arg) do
-					index = index..self.__keys[k]
-				end
-			end
-			self[index] = _arg
-		end
+		_setter = ", function(self, index, value) "..index_string.."if type(value) == 'table' then local _r,_g,_b = getter(".._static.."index); setter(".._static.."value[1] or value.r or _r,value[2] or value.g or _r,value[3] or value.b or _r)\nelseif type(value) == 'string' then setter(".._static.."_index, tonumber(value,16)) else setter(".._static.."_index, value) end end"
+		_caller = ", function(self, color_tbl, r_hex, g, b) if type(color_tbl) == 'table' then for k,v in pairs(color_tbl) do self[k]=v end\nelseif type(r_hex) == 'string' then self[color_tbl] = r_hex else self[color_tbl] = {r_hex, g, b} end end"
 	end
+	
+	local buffer = _getter.._ipairs.._pairs.._setter.._caller
+	local _f, err = load(buffer)
+	if not _f then error(err) end
+	_m.__index,_m.__ipairs,_m.__pairs,_m.__newindex,_m.__call = _f(getter, setter, colorNames)
+	
+	return setmetatable(palette, _m)
 end
 
+--[[
+	Add subtable for manipulating nD positions.
+	Getter and setters must return/require array of values like ... , NOT TABLE!!!
+	Example:
+	
+	@tparam table tbl Wrapped peripheral or Peripheral wrapper
+	@tparam function getter Coordinate getter function.
+	@tparam function|nil setter Coordinate setter function
+	@tparam[opt={'x','y'}] {string,...} keys Coordinate names. Must be unique!
+	@tparam[opt=false] boolean static pos table is static ( call getter and setter with 'self' arg)
+	@treturn table pos sub-table for nD movement
+]]
+function epf.subtableSide(tbl, getter, setter, static)
 
 
-
+end
 
 if settings.get("_EFP_GLOBAL", false) and not _G.epf then
 	_G.epf = epf

@@ -1,6 +1,6 @@
 --[[
 	Lua Patcher library by PavelKom.
-	Version: 0.3
+	Version: 0.4
 	Patch some broken or non-existed methods.
 	
 	Don't forget to add require "path.to.patches" to startup file
@@ -159,9 +159,18 @@ function string.split(inputstr, sep)
 end
 
 local tab = {
-["("] = "%(",[")"] = "%)",["."] = "%.",["%"] = "%%",["+"] = "%+",
-["-"] = "%-",["*"] = "%*",["?"] = "%?",["["] = "%[",["]"] = "%]",
-["^"] = "%^",["$"] = "%$",
+{"%", "%%"}, -- !!!
+{"(", "%("},
+{")", "%)"},
+{".", "%."},
+{"+", "%+"},
+{"-", "%-"},
+{"*", "%*"},
+{"?", "%?"},
+{"[", "%["},
+{"]", "%]"},
+{"^", "%^"},
+{"$", "%$"},
 }
 
 --[[
@@ -175,8 +184,9 @@ local tab = {
 function string.replace(inputstr, non_pattern, repl)
 	repl = repl or ""
 	for k, v in pairs(tab) do
-		if string.find(non_pattern, v) then
-			non_pattern = string.gsub(non_pattern, v, "%"..v)
+		local _k, _v = v[1], v[2]
+		if string.find(non_pattern, _v) then
+			non_pattern = string.gsub(non_pattern, _v, "%".._v)
 		end
 	end
 	return string.gsub(inputstr, non_pattern, repl)
@@ -210,8 +220,8 @@ function math.clamp(value, minimum, maximum)
     expect(2, minimum, "number", "nil")
     expect(3, maximum, "number", "nil")
 	
-	minimum = minimum or 0
-	maximum = maximum or 1
+	minimum = minimum or -math.huge
+	maximum = maximum or math.huge
 	
 	return math.max(minimum, math.min(value, maximum))
 end
@@ -232,7 +242,7 @@ end
 ]]
 function colors.norm(value) -- value: number
     expect(1, value, "number")
-	return math.clamp(value,0, 255) / 255
+	return bit32.band(value, 0xFF) / 255
 end
 
 --[[
@@ -243,7 +253,7 @@ end
 ]]
 function colors.abs(value)
     expect(1, value, "number")
-	return math.clamp(value,0, 1) * 255
+	return bit32.band(value * 255, 0xFF)
 end
 
 --[[
@@ -260,7 +270,10 @@ function colors.normRGB(r,g,b)
     expect(1, r, "number")
     expect(2, g, "number")
     expect(3, b, "number")
-	return math.clamp(r,0, 255) / 255, math.clamp(g,0, 255) / 255, math.clamp(b,0, 255) / 255
+	return -- From colors.unpackRGB (but without shifts)
+		bit32.band(r, 0xFF) / 255,
+		bit32.band(g, 0xFF) / 255,
+		bit32.band(b, 0xFF) / 255
 end
 
 --[[
@@ -277,7 +290,10 @@ function colors.absRGB(r,g,b)
     expect(1, r, "number")
     expect(2, g, "number")
     expect(3, b, "number")
-	return math.clamp(r,0, 1) * 255, math.clamp(g,0, 1) * 255, math.clamp(b,0, 1) * 255
+	return -- From colors.packRGB (but without shifts)
+        bit32.band(r * 255, 0xFF),
+        bit32.band(g * 255, 0xFF),
+        bit32.band(b * 255, 0xFF)
 end
 
 --[[
@@ -289,7 +305,13 @@ end
 	@treturn number Hex 24bit number
 ]]
 function colors.packAbsRGB(r,g,b)
-	return colors.packRGB(colors.normRGB(r,g,b))
+    expect(1, r, "number")
+    expect(2, g, "number")
+    expect(3, b, "number")
+	return
+        bit32.band(r, 0xFF) * 2 ^ 16 +
+        bit32.band(g, 0xFF) * 2 ^ 8 +
+        bit32.band(b, 0xFF)
 end
 
 --[[
@@ -301,7 +323,11 @@ end
 	@treturn number Blue absolute value
 ]]
 function colors.unpackAbsRGB(hex)
-	return colors.absRGB(colors.packRGB(hex))
+	expect(1, rgb, "number")
+    return
+        bit32.band(bit32.rshift(rgb, 16), 0xFF),
+        bit32.band(bit32.rshift(rgb, 8), 0xFF),
+        bit32.band(rgb, 0xFF)
 end
 
 colours.norm = colors.norm

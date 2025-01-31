@@ -5,7 +5,7 @@
 	Extended Peripheral Framework version: 2.0
 	
 ]]
-local epf = require 'lib.epf'
+local epf = require 'epf'
 
 local Peripheral = {}
 Peripheral.__str = function(self) -- tostring for objects

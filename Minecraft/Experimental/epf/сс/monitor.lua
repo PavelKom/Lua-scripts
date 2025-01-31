@@ -5,12 +5,17 @@
 	Extended Peripheral Framework version: 2.1b
 	https://tweaked.cc/peripheral/monitor.html
 ]]
-local epf = require 'lib.epf'
+local epf = require 'epf'
 
 local Peripheral = {}
 Peripheral.__str = function(self)
 	return string.format("%s '%s' Size: %ix%i Colors: %s", subtype(self), peripheral.getName(self), self.size, self.color)
 end
+function Peripheal.__call(self, ...)
+	self = Peripheal(peripheral.getName(self)) -- Regenerate monitor after add/remove parts
+end
+
+-- CURSOR POSITION
 function Peripheral.__pos_getter(self)
 	return self.getCursorPos()
 end
@@ -23,7 +28,20 @@ function Peripheral.pos(self)
 	Peripheral.__pos.__cur_obj = self -- On getting .pos return static pos but set current object as target
 	return Peripheral.__pos
 end
--- TODO: Add palette
+
+-- PALETTE
+function Peripheral.__palette_getter(self)
+	return self.getPaletteColor()
+end
+function Peripheral.__palette_setter(self, ...)
+	self.setPaletteColor(...)
+end
+Peripheral.__palette = epf.subtablePalette(Peripheral,
+	Peripheral.__palette_getter, Peripheral.__palette_setter, true)
+function Peripheral.palette(self)
+	Peripheral.__palette.__cur_obj = self
+	return Peripheral.__palette
+end
 
 function Peripheral.__init(self)
 	self.__getter = {

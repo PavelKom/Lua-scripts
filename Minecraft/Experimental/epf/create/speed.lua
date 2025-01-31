@@ -2,10 +2,10 @@
 	Speedometer peripheral wrapper
 	Author: PavelKom
 	Version: 0.2
-	Extended Peripheral Framework version: 2.1
+	Extended Peripheral Framework version: 2.0
 	
 ]]
-local epf = require 'lib.epf'
+local epf = require 'epf'
 
 local Peripheral = {}
 Peripheral.__str = function(self)
