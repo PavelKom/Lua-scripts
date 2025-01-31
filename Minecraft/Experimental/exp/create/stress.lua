@@ -5,11 +5,11 @@
 	Extended Peripheral Framework version: 2.0
 	
 ]]
-local epf = require 'epf'
+local epf = require 'lib.epf'
 
 local Peripheral = {}
 Peripheral.__str = function(self) -- tostring for objects
-	return string.format("%s '%s' Stress: %i/%i (%.1f%%)", subtype(self), self.name, self.stress, self.max, self.use * 100)
+	return string.format("%s '%s' Stress: %i/%i (%.1f%%)", subtype(self), peripheral.getName(self), self.stress, self.max, self.use * 100)
 end
 function Peripheral.__init(self) -- Add getters, setters and subtables (like pos for managing cursor position)
 	self.__getter = {
@@ -37,13 +37,17 @@ function Peripheral.__init(self) -- Add getters, setters and subtables (like pos
 	
 	return self
 end
-Peripheral.new = epf.simpleNew(Peripheral) -- Add default new()
-Peripheral = epf.wrapperFixer(tbl, "Create_Stressometer", "Stressometer") -- Validate wrapper
+Peripheral = epf.wrapperFixer(Peripheral, "Create_Stressometer", "Stressometer") -- Validate wrapper
 
 local lib = {} -- Create library
 lib.Stressometer = Peripheral -- Add alias to library
 -- Add information about library
-lib = setmetatable(lib, __call=Peripheral.__call, __type="library", __subtype="peripheral wrapper library")
+local _m = getmetatable(Peripheral)
+lib = setmetatable(lib, {
+	__call=_m.__call,
+	__type="library",
+	__subtype="peripheral wrapper library"
+})
 
 -- Now lib(...) == lib.Stressometer(...) == Peripheral(...) == Peripheral.new(...)
 -- Note: If library contain more than one wrapper, don't add Peripheral() as __call to library!

@@ -1,20 +1,23 @@
 --[[
 	Lua Patcher library by PavelKom.
-	Version: 0.2
-	Patch some broken or non-existed methods
+	Version: 0.3
+	Patch some broken or non-existed methods.
+	
+	Don't forget to add require "path.to.patches" to startup file
 ]]
 
-if _G._PATCHED_BY_PAVELKOM then return end
 
-if not string.find(package.path, "./src/?.lua", 1, true) then
-	package.path = package.path..';./src/?.lua'
+-- Extend library path finder. package.path resets on every program start (((
+if not string.find(package.path, "/src/?.lua", 1, true) then
+	package.path = package.path..';/src/?.lua'
 end
-if not string.find(package.path, "./lib/?.lua", 1, true) then
-	package.path = package.path..';./lib/?.lua'
+if not string.find(package.path, "/lib/?.lua", 1, true) then
+	package.path = package.path..';/lib/?.lua'
 end
-if not string.find(package.path, "./include/?.lua", 1, true) then
-	package.path = package.path..';./include/?.lua'
+if not string.find(package.path, "/include/?.lua", 1, true) then
+	package.path = package.path..';/include/?.lua'
 end
+if _G._PATCHED_BY_PAVELKOM then return end
 
 -- TABLE
 
@@ -25,8 +28,8 @@ end
 	ipairs(tbl) NOT return tbl.__pairs BUT return default ipairs method.
 ]]
 if not _G.raw_ipairs then
-	_G.raw_ipairs = ipairs
-	ipairs = function(t)
+	_G.raw_ipairs = _G.ipairs
+	_G.ipairs = function(t)
 		local metatable = getmetatable(t)
 		if metatable and metatable.__ipairs then
 			return metatable.__ipairs(t)
@@ -35,8 +38,8 @@ if not _G.raw_ipairs then
 	end
 end
 if not _G.raw_type then
-	_G.raw_type = type -- Copy default type function as raw_type
-	type = function(t)
+	_G.raw_type = _G.type -- Copy default type function as raw_type
+	_G.type = function(t)
 		local metatable = getmetatable(t)
 		if metatable and metatable.__type then
 			if type(metatable.__type) == 'function' then -- If __type is function
@@ -87,8 +90,7 @@ if not _G.name then
 		return type(t)
 	end
 end
-local expect = require "cc.expect"
-local expect, field = expect.expect, expect.field
+local expect = dofile("rom/modules/main/cc/expect.lua").expect
 
 --[[
 	Patch for table library. Add deep copy function
@@ -147,12 +149,13 @@ end
 	@treturn {string,...} Splitted string
 ]]
 function string.split(inputstr, sep)
-  sep = sep or "%s"
-  local t = {}
-  for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-    table.insert(t, str)
-  end
-  return t
+	if sep then sep = "([^"..sep.."]+)"
+	else sep = "." end -- Split by char
+	local t = {}
+	for str in string.gmatch(inputstr, sep) do
+	table.insert(t, str)
+	end
+	return t
 end
 
 local tab = {
@@ -307,5 +310,23 @@ colours.normRGB = colors.normRGB
 colours.absRGB = colors.absRGB
 colours.packAbsRGB = colors.packAbsRGB
 colours.unpackAbsRGB = colors.unpackAbsRGB
+
+--[[
+-- Get patch path
+-- https://stackoverflow.com/a/23535333/23563047
+local function script_path()
+   local str = debug.getinfo(2, "S").source:sub(2)
+   return str:match("(.*/)")
+end
+-- Autorun this patches for _ENV resets
+shell.execute_post = shell.execute
+function shell.execute(command, ...)
+	print(script_path()..'patches')
+	require(script_path()..'patches')
+	print(package.path)
+	shell.execute_post(command, ...)
+end
+]]
+print("Now your computer patched by PavelKom :^)")
 
 _G._PATCHED_BY_PAVELKOM = true

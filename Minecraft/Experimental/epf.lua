@@ -1,7 +1,7 @@
 --[[
 Extended Peripheral Framework
 Author: PavelKom
-Version 2.0
+Version 2.1b
 	
 Library for extanding wrapped peripheral by adding get/set properties and other.
 
@@ -53,10 +53,27 @@ lib = setmetatable(lib, __call=Peripheral.__call, __type="library", __subtype="p
 -- Note: If library contain more than one wrapper, don't add Peripheral() as __call to library!
 
 return lib
+
+
+@changed 2.1b Added pos sub-table
 ]]
 
 -- Patches
-require "patches"
+require "lib.patches"
+
+-- You can set this library as global API by createing setting
+--[[ Define setting
+settings.define("_EFP_GLOBAL", {
+    description = "Add Extended Peripheral Framework to global table on startup",
+    default = true,
+    type = "boolean",
+})
+
+]]
+if settings.get("_EFP_GLOBAL", false) and _G.epf then
+	return _G.epf
+end
+	
 
 local epf = {}
 
@@ -71,9 +88,9 @@ local epf = {}
 	@tparam table cls Class constructor
 	@treturn function Property getter metamethod
 ]]
-epf.GETTER2 = function(cls)
+function epf.GETTER2(cls)
 	return function(self, index)
-		if self ~= cls -- Get property | call static method
+		if self ~= cls then -- Get property | call static method
 			if self.__getter and self.__getter[index] then -- internal/class object getter
 				return self.__getter[index]()
 			elseif cls.__getter and cls.__getter[index] then -- external/class getter
@@ -81,14 +98,15 @@ epf.GETTER2 = function(cls)
 			elseif cls and cls[index] then -- class method
 				return cls[index](self)
 			end
+			error("Can't get value from '"..tostring(self)..'().'..tostring(index).."'")
 		else
 			if self.__getter and self.__getter[index] then -- external/class getter
 				return self.__getter[index](nil)
 			elseif self and self[index] then -- class method
 				return self[index](nil)
 			end
+			error("Can't get value from '"..tostring(cls)..'().'..tostring(index).."'")
 		end
-		error("Can't get value from '"..tostring(cls)..'().'..tostring(index).."'")
 	end
 end
 
@@ -101,9 +119,9 @@ end
 	@tparam table cls Class constructor
 	@treturn function Property setter metamethod
 ]]
-epf.SETTER2 = function(cls)
+function epf.SETTER2(cls)
 	return function(self, index, value)
-		if self ~= cls -- Set property
+		if self ~= cls then -- Set property
 			if not self.__setter or not self.__setter[index] then
 				return self.__setter[index](value)
 			elseif cls.__setter and cls.__setter[index] then
@@ -127,7 +145,7 @@ end
 	@tparam table cls Class constructor
 	@treturn function Object iterator
 ]]
-epf.PAIRS2 = function(cls)
+function epf.PAIRS2(cls)
 	return function(self)
 		local key, value, k2, k3
 		local names = {'method','getter','setter',}
@@ -204,7 +222,7 @@ end
 	@tparam table cls Class constructor
 	@treturn function Object iterator
 ]]
-epf.IPAIRS2 = function(cls)
+function epf.IPAIRS2(cls)
 	return function(self)
 		local key, value, k2, v2
 		local keys = {}
@@ -292,8 +310,16 @@ function epf.wrapperFixer(tbl, _type, _name)
 	tbl.__type = "peripheral wrapper"
 	tbl.__subtype = tbl.__subtype or _name or error("Peripheral type not specific")
 
-	local _m = getmetatable(tbl)
-	_m.__call = _m.__call or tbl.new or epf.simpleNew(tbl)
+	local _m = getmetatable(tbl) or {}
+	_m.__call = _m.__call
+	if not tbl.new then
+		tbl.new = epf.simpleNew(tbl)
+	end
+	if not _m.__call then
+		if tbl.new then _m.__call = function(self,...) return tbl.new(...) end
+		else _m.__call = function(self,...) return epf.simpleNew(tbl) end
+		end
+	end
 	_m.__type= _m.__type or tbl.__type
 	_m.__subtype= _m.__subtype or tbl.__subtype
 	_m.__eq= _m.__eq or tbl.__eq or epf.EQUAL
@@ -313,6 +339,12 @@ function epf.simpleNew(tbl)
 	return function(name)
 		local self = name and peripheral.wrap(name) or peripheral.find(tbl.type)
 		assert(self, string.format("Peripheral '%s' not founded", name and name or tbl.type))
+		name = name or peripheral.getName(self)
+		-- Get wrapped peripheral if it already registered
+		if tbl.__names and tbl.__names[name] then
+			return tbl.__names[name]
+		end
+		
 		self.__getter = {}
 		self.__setter = {}
 		local _m = getmetatable(self)
@@ -325,7 +357,7 @@ function epf.simpleNew(tbl)
 			tbl.__metas.__newindex = epf.SETTER2(tbl)
 			tbl.__metas.__pairs = epf.PAIRS2(tbl)
 			tbl.__metas.__ipairs = epf.IPAIRS2(tbl)
-			tbl.__metas.__tostring = function(self) return subtype(self).." '"..(self.name or type(self)).."'" end
+			tbl.__metas.__tostring = function(self) return subtype(self).." '"..(name or type(self)).."'" end
 		end
 		
 		_m.__index = tbl.__metas.__index
@@ -334,17 +366,204 @@ function epf.simpleNew(tbl)
 		_m.__ipairs = tbl.__metas.__ipairs
 		_m.__tostring = tbl.__str or tbl.__metas.__tostring -- tbl.__str -- tostring for objects
 		_m.__call = tbl.__call or nil -- Caller for object.  Test.__call(obj)
-		_m.__type = "peripheral",
+		_m.__type = "peripheral"
 		_m.__eq = tbl.__eq or epf.EQUAL
-		_m.__subtype = tbl.__subtype,
+		_m.__subtype = tbl.__subtype
+		_m.__super = tbl -- For getting wrapper
 		
 		-- Post initialise
-		if type(tbl.__init) == function then
-			self = tbl.init(self)
+		if type(tbl.__init) == 'function' then
+			self = tbl.__init(self)
 		end
+		
+		-- Register wrapped peripheral for avoiding re-initialise
+		tbl.__names = tbl.__names or {}
+		tbl.__names[name] = self
 		
 		return self
 	end
+end
+
+--[[
+	Add subtable for manipulating nD positions.
+	Getter and setters must return/require array of values like ... , NOT TABLE!!!
+	Example:
+	GET VALUE
+		pos.x -- return 'x' coordinate
+		pos[1] -- error
+		pos['1'] -- allowed, but '10','11',... is not!
+		Fox hexademical: pos['0123456789abcdef']
+		pos.xy -- return {x,y}
+	SET VALUE
+		pos.x = 7
+		pos.xy = {1,2} -- By index
+		pos.xy = {x=1,y=2} -- By name
+		pos() -- Reset to (1,1,...)
+		pos(1,2) -- == pos.xy = {1,2}
+		pos(_,2) -- == pos.y = 2
+		pos({1,2}) -- == pos.xy = {1,2}
+		pos({x=1,y=2}) -- == pos.xy = {x=1,y=2}
+		Note: pos.xy = {1,2,x=3,y=4} -- xy={3,4} Names have higher priority than indexes
+	ITERATE
+		for k,v in pairs(pos) do -- Iterate by name
+			print(tostring(k).."="..tostring(v)) -- x=1 y=2 ...
+		end
+		for k,v in ipairs(pos) do -- Iterate by index
+			print(tostring(k).."="..tostring(v)) -- 1=1 2=2 ...
+		end
+	
+	@tparam table tbl Wrapped peripheral or Peripheral wrapper
+	@tparam function getter Coordinate getter function.
+	@tparam function|nil setter Coordinate setter function
+	@tparam[opt={'x','y'}] {string,...} keys Coordinate names. Must be unique!
+	@tparam[opt=false] boolean static pos table is static ( call getter and setter with 'self' arg)
+	@treturn table pos sub-table for 
+]]
+function epf.subtablePos(tbl, getter, setter, keys, static)
+	assert(tbl, "Peripheral wrapper not specific")
+	assert(type(getter) == 'function', "Position getter not specific")
+	assert(setter == nil or type(setter) == 'function',
+		"Position setter not nil/function")
+	
+	-- Create pos sub-table
+	local pos = {__keys = keys  or {'x', 'y'}, __cur_obj=nil}
+	local _m = {
+		__super=tbl, -- Connect to tbl
+	}
+	-- For avoiding re-creating pos-table for every object
+	-- STATIC
+	if static then
+		-- obj = Test()
+		-- obj.pos.x -> Test.pos_getter(self,'x') return self.getter().x end
+		_m.__index = function(self, index)
+			local _p = {getter(self.__cur_obj)} -- {x,y,z,...}. 
+			local _r = {}
+			for k,v in pairs(_p) do -- pos.xyz
+				if string.find(index, self.__keys[k]) then
+					_r[#_r+1] = v
+				end
+			end
+			if #_r == 1 then _r = _r[1] end -- pos.x
+			return _r
+		end
+		-- Iterate coordinates by name
+		_m.__pairs = function(self)
+			local _pos = {getter(self.__cur_obj)} -- {x,y,z,...}
+			for k,v in pairs(_pos) do --{'x'=x,'y'=y,...}
+				_pos[self.__keys[k]] = v
+				_pos[k] = nil
+			end
+			local key, value
+			return function()
+				key, value = next(_pos, key)
+				return key, value
+			end
+		end
+		-- Iterate coordinates by position
+		_m.__ipairs = function(self)
+			local _pos = {getter(self.__cur_obj)} -- {x,y,z,...}
+			local key, value
+			return function()
+				key, value = next(_pos, key)
+				return key, value
+			end
+		end
+		if setter then
+			_m.__newindex = function(self, index, value)
+				if type('value') ~= 'table' then value = {value} end
+				local _p = {getter(self.__cur_obj)}
+				local _i = 1
+				for k,v in pairs(_p) do
+					if string.find(index, self.__keys[k]) then
+						_p[k] = value[self.__keys[k]] or value[_i] or _p[k] -- Change values for specific keys
+						_i = _i + 1
+					end
+				end
+				setter(self.__cur_obj, table.unpack(_p))
+			end
+		end
+	else -- NON-STATIC
+		-- obj = Test()
+		-- obj.pos.x -> getter().x
+		_m.__index = function(self, index)
+			local _p = {getter()} -- {x,y,z,...}. 
+			local _r = {}
+			for k,v in pairs(_p) do -- pos.xyz
+				if string.find(index, self.__keys[k]) then
+					_r[#_r+1] = v
+				end
+			end
+			if #_r == 1 then _r = _r[1] end -- pos.x
+			return _r
+		end
+		_m.__pairs = function(self)
+			local _pos = {getter()} -- {x,y,z,...}
+			for k,v in pairs(_pos) do --{'x'=x,'y'=y,...}
+				_pos[self.__keys[k]] = v
+				_pos[k] = nil
+			end
+			local key, value
+			return function()
+				key, value = next(_pos, key)
+				return key, value
+			end
+		end
+		_m.__ipairs = function(self)
+			local _pos = {getter()} -- {x,y,z,...}
+			local key, value
+			return function()
+				key, value = next(_pos, key)
+				return key, value
+			end
+		end
+		if setter then
+			_m.__newindex = function(self, index, value)
+				if type('value') ~= 'table' then value = {value} end
+				local _p = {getter()}
+				local _i = 1
+				for k,v in pairs(_p) do
+					if string.find(index, self.__keys[k]) then
+						_p[k] = value[self.__keys[k]] or value[_i] or _p[k] -- Change values for specific keys
+						_i = _i + 1
+					end
+				end
+				setter(table.unpack(_p))
+			end
+		end
+	end
+	if setter then
+		_m.__call = function(self, ...)
+			local _arg = {...}
+			local index = ""
+			if #_arg == 0 then -- pos() == pos(1,1,1,...)
+				for k,v in ipairs(self.__keys) do
+					_arg[k] = 1
+					index = index..v
+				end
+			elseif type(_arg[1]) == 'table' then -- pos({'x'=7,'y'=2})
+				for k,v in ipairs(self.__keys) do
+					if _arg[k] or _arg[v] then -- [1]=7 or 'x'=7
+						_arg[k] = _arg[k] or _arg[v] -- [1] = [1] or ['x']
+						_arg[v] = nil -- ['x']=nil
+						index = index..v
+					end
+				end
+			else -- pos(7,2)
+				for k,v in pairs(_arg) do
+					index = index..self.__keys[k]
+				end
+			end
+			self[index] = _arg
+		end
+	end
+end
+
+
+
+
+
+if settings.get("_EFP_GLOBAL", false) and not _G.epf then
+	_G.epf = epf
 end
 
 return epf
