@@ -2,9 +2,9 @@
 	Example peripheral peripheral wrapper
 	Author: PavelKom
 	Version: 0.2
-	Extended Peripheral Framework version: 2.1b
+	Extended Peripherals Framework version: 2.1b
 	
-	Example peripheral wrapper library for Extended Peripheral Framework
+	Example peripheral wrapper library for Extended Peripherals Framework
 ]]
 -- Import epf API
 local epf = require 'epf'

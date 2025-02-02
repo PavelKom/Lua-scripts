@@ -2,8 +2,8 @@
 	Stressometer peripheral wrapper
 	Author: PavelKom
 	Version: 0.2
-	Extended Peripheral Framework version: 2.0
-	
+	Extended Peripherals Framework version: 2.3
+	https://github.com/Creators-of-Create/Create/wiki/Stressometer-%28Peripheral%29
 ]]
 local epf = require 'epf'
 
@@ -37,19 +37,16 @@ function Peripheral.__init(self) -- Add getters, setters and subtables (like pos
 	
 	return self
 end
-Peripheral = epf.wrapperFixer(Peripheral, "Create_Stressometer", "Stressometer") -- Validate wrapper
+Peripheral = epf.wrapperFixer(Peripheral, "Create_Stressometer", "Stressometer")
 
-local lib = {} -- Create library
-lib.Stressometer = Peripheral -- Add alias to library
--- Add information about library
+local lib = {}
+lib.Stressometer = Peripheral
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
+	__name="Stressometer",
 	__type="library",
 	__subtype="peripheral wrapper library"
 })
-
--- Now lib(...) == lib.Stressometer(...) == Peripheral(...) == Peripheral.new(...)
--- Note: If library contain more than one wrapper, don't add Peripheral() as __call to library!
 
 return lib

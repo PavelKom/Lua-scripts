@@ -2,8 +2,8 @@
 	Speedometer peripheral wrapper
 	Author: PavelKom
 	Version: 0.2
-	Extended Peripheral Framework version: 2.0
-	
+	Extended Peripherals Framework version: 2.3
+	https://github.com/Creators-of-Create/Create/wiki/Speedometer-%28Peripheral%29
 ]]
 local epf = require 'epf'
 
@@ -28,6 +28,7 @@ lib.Speedometer = Peripheral
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
+	__name="Speedometer",
 	__type="library",
 	__subtype="peripheral wrapper library"
 })
