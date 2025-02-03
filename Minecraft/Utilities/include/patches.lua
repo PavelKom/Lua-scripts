@@ -57,7 +57,7 @@ if not _G.raw_type then -- Bad idea
 	end
 end
 ]]
-if not _G.custype -- Custom type
+if not _G.custype then -- Custom type
 	_G.custype = function(t)
 		local metatable = getmetatable(t)
 		if metatable and metatable.__name then
@@ -119,7 +119,7 @@ local expect = dofile("rom/modules/main/cc/expect.lua").expect
 	@treturn table Copy of obj
 ]]
 function table.copy(obj, seen)
-  if raw_type(obj) ~= 'table' then return obj end
+  if type(obj) ~= 'table' then return obj end
   if seen and seen[obj] then return seen[obj] end
   local s = seen or {}
   local res = {}

@@ -366,7 +366,7 @@ end
 	@treturn table Fixed wrapper table
 ]]
 function epf.simpleNew(tbl)
-	assert(custype(tbl) == 'peripheral wrapper', "Peripheral (or wrapper) not specific")
+	assert(type(tbl) == 'table', "Peripheral (or wrapper) not specific")
 	return function(name)
 		local self = name and peripheral.wrap(name) or peripheral.find(tbl.type)
 		assert(self, string.format("Peripheral '%s' not founded", name and name or tbl.type))
@@ -456,7 +456,7 @@ end
 	@treturn table pos sub-table for nD movement
 ]]
 function epf.subtablePos(tbl, getter, setter, keys, cfg)
-	expect(1, getter, "peripheral", 'peripheral wrapper')
+	expect(1, tbl, "peripheral", 'peripheral wrapper', 'table')
 	expect(2, getter, "function")
 	expect(3, setter, "function", "nil")
 	expect(4, keys, "table", "nil")
@@ -608,7 +608,7 @@ local colorNames = {
 	@treturn table palette sub-table for working with color palette
 ]]
 function epf.subtablePalette(tbl, getter, setter, cfg)
-	expect(1, getter, "peripheral", 'peripheral wrapper')
+	expect(1, tbl, "peripheral", 'peripheral wrapper', 'table')
 	expect(2, getter, "function")
 	expect(3, setter, "function", "nil")
 	expect(4, cfg, "table", "nil")
@@ -810,7 +810,7 @@ end
 	@treturn table pos sub-table for nD movement
 ]]
 function epf.subtableSide(tbl, getter, setter, caller, pair, cfg)
-	expect(1, getter, "peripheral", 'peripheral wrapper')
+	expect(1, tbl, "peripheral", 'peripheral wrapper', 'table')
 	expect(2, getter, "function")
 	expect(3, setter, "function", "nil")
 	expect(4, caller, "function", "nil")
@@ -1020,8 +1020,8 @@ epf.CHATCOLORS.DARK_GREY = epf.CHATCOLORS.DARK_GRAY
 epf.CHATCOLORS.GLITCH = epf.CHATCOLORS.OBFUSCATED
 epf.CHATCOLORS.UNDER = epf.CHATCOLORS.UNDERLINE
 epf.CHATCOLORS.STRIKE = epf.CHATCOLORS.STRIKETHROUGH
-setmetatable(lib.CHATCOLORS, {
-	__index = getset.GETTER_TO_UPPER(epf.CHATCOLORS.RESET)
+setmetatable(epf.CHATCOLORS, {
+	__index = epf.GETTER_TO_UPPER(epf.CHATCOLORS.RESET)
 })
 --[[
 	Create color/style-formatted text for message

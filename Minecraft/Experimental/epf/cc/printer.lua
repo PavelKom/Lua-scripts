@@ -128,7 +128,7 @@ function Peripheral.__init(self)
 			self.__queue[#self.__queue+1] = Library.newEx(tostring(text))
 		end
 	end
-	self.remQueue = function(index) then return table.remove(self.__queue,index) end
+	self.remQueue = function(index) return table.remove(self.__queue,index) end
 	self.clearQueue = function() while #self.__queue > 0 do table.remove(self.__queue) end end
 	self.printQueue = function(delay, preserveError)
 		-- Note: After trying to print the queue, books and libraries are split into pages
@@ -260,7 +260,7 @@ function Page.newEx(text, title)
 	expect(1,text, "string", "table")
 	expect(2,title, "string", "nil")
 	local self = {title=tostring(title),lines = {}}
-	local l = text % Page.LINES_PER_PAGE
+	local l = #text % Page.LINES_PER_PAGE
 	if #text > 0 then
 		if l == 0 then l = Page.LINES_PER_PAGE end
 		for i=l, 1, -1 do
@@ -314,7 +314,7 @@ function Book.new(text, titles, name, fixed)
 	
 	for i=1, Book.MAX_PAGES do
 		if #text == 0 then break end
-		pages[#pages+1], text = Page.new(text, table.remove(titles,1), true)
+		self.pages[#self.pages+1], text = Page.new(text, table.remove(titles,1), true)
 	end
 	
 	self.isEmpty = function() return #self.pages == 0 end
@@ -343,13 +343,13 @@ function Book.newEx(text, titles, name, fixed)
 	titles = titles or {}
 	
 	local self = {pages={}, name=name or "Unnamed book"}
-	local l = text % (Book.LINES_PER_PAGE * Book.MAX_PAGES) -- 16*21
+	local l = #text % (Page.LINES_PER_PAGE * Book.MAX_PAGES) -- 16*21
 	
 	if #text > 0 then
 		if l == 0 then l = Page.LINES_PER_PAGE * Book.MAX_PAGES end
 		l = math.ceil(l/Page.LINES_PER_PAGE)
 		for i=l, 1, -1 do
-			pages[i], text = Page.newEx(text, table.remove(titles), true)
+			self.pages[i], text = Page.newEx(text, table.remove(titles), true)
 		end
 	end
 	
@@ -405,7 +405,7 @@ function Library.new(text, titles, name, fixed)
 	
 	while #text > 0 do
 		local n = string.format("%s #%i", name or "Unnamed book", #books+1)
-		books[#books+1] = Book.new(text, titles, n, true)
+		self.books[#l.books+1], text = Book.new(text, titles, n, true)
 	end
 	
 	setmetatable(self, libraryMeta)
@@ -437,12 +437,22 @@ function Library.newEx(text, titles, name, fixed)
 	
 	while #text > 0 do
 		local n = string.format("%s #%i", name or "Unnamed book", b)
-		books[b] = Book.newEx(text, titles, n, true)
+		self.books[b], text = Book.newEx(text, titles, n, true)
 		b = b - 1
 	end
 	
 	setmetatable(self, libraryMeta)
 	return self
+end
+function Library.fromFile(path)
+	if fs.exists(path) and not fs.isDir(path) then
+		local f = io.open(path, 'r')
+		local t = f:read('*a')
+		print(type(t))
+		local l = Library(t)
+		f:close()
+		return l
+	end
 end
 
 local pblMeta = {

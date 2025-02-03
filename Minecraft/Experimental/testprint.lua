@@ -10,7 +10,7 @@ local function draw(obj)
 		obj.clear()
 	else -- printer
 		obj.newPage()
-		obj.setTitle("Testprint")
+		obj.setPageTitle("Testprint")
 	end
 	obj.setCursorPos(1,1)
 	obj.write(" |0123456789ABCDEF")
