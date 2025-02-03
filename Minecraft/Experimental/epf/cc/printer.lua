@@ -11,6 +11,21 @@
 	public static final int LINES_PER_PAGE = 21;
 	public static final int LINE_MAX_LENGTH = 25;
 	public static final int MAX_PAGES = 16;
+	
+	Important notes:
+	1.	The printer does not separate lines longer than 25 characters, so everything after the 25th character is not printed.
+	2.	The printer does not detect \n and \r as line ending characters, it sees them as spaces. Use epf.fixString(text[, remove_empty) for replace \r\n and \r to \n and remove empty strings.
+	3.	Tab \t acts as a regular space.
+	4.	Library, Book and Page (added by this library) divide text according to these features.
+	5.	The Page size matches the printed page (up to 25*21=525 characters).
+	6.	The Book is the same size as the book being bound (up to 525*16=8400 characters).
+	7.	The library consists of an unlimited number of books.
+	8.	Use Library(text[,titles[,name[,fixed), Book(text[,titles[,name[,fixed), Page(text[,title[,fixed) for create Library, Book and Page.
+		text - string or array-like table with splitted text.
+		titles - array-like table with page titles.
+		name - string with name of Book or Library.
+		title - string with title for Page.
+		fixed - boolean. Text already fixed (\r\n, \r -> \n)
 ]]
 local epf = require 'epf'
 local expect = require "cc.expect"
@@ -19,6 +34,9 @@ local expect = expect.expect
 local lib = {}
 
 local Peripheral = {}
+local Page = {} -- Single page
+local Book = {} -- Book with pages
+local Library = {} -- Array of books
 
 -- Change this setting to true for static-calls pos and palette tables
 lib.EXTERNAL_TABLES = false
@@ -35,6 +53,41 @@ Peripheral.__pos = epf.subtablePos(Peripheral,
 function Peripheral.pos(self)
 	rawset(Peripheral.__pos,'__cur_obj',self) -- On getting .pos return static pos but set current object as target
 	return Peripheral.__pos
+end
+
+
+local function _reverse_queue(queue)
+	local r = {}
+	for i=#queue, 1, -1 do
+		if subtype(queue[i]) == 'Library' then
+			for j=#queue[i], 1, -1 do
+				local b = queue[i].books[j]
+				for k=#b, 1, -1 do
+					r[#r+1] = b.pages[k]
+				end
+			end
+		elseif subtype(queue[i]) == 'Book' then
+			for j=#queue[i], 1, -1 do
+				r[#r+1] = libr.books[j]
+			end
+		elseif subtype(queue[i]) == 'Page' then
+			r[#r+1] = queue[i]
+		else
+			error("Unknown value type in queue #"..tostring(i))
+		end
+	end
+	return r
+end
+
+local function _print_page(printer, page)
+	printer.newPage()
+	printer.setPageTitle(page.title)
+	for i, l in pairs(page) do
+		printer.pos(1,i)
+		printer.write(l) -- Note: The printer does not break lines longer than 25 characters, and does not recognize \r and \n as line breaks, so Page does this for it.
+	end
+	printer.endPage()
+	return 1
 end
 
 function Peripheral.__init(self)
@@ -66,15 +119,83 @@ function Peripheral.__init(self)
 	self.__getter.column = self.__getter.x
 	self.__getter.col = self.__getter.x
 	
+	self.__queue = {}
+	self.addQueue = function(text, noCopy)
+		if custype(text) == 'utility' and (subtype(text) == 'Library' or
+			subtype(text) == 'Library' or subtype(text) == 'Library') then
+				self.__queue[#self.__queue+1] = noCopy and text or table.copy(text)
+		else
+			self.__queue[#self.__queue+1] = Library.newEx(tostring(text))
+		end
+	end
+	self.remQueue = function(index) then return table.remove(self.__queue,index) end
+	self.clearQueue = function() while #self.__queue > 0 do table.remove(self.__queue) end end
+	self.printQueue = function(delay, preserveError)
+		-- Note: After trying to print the queue, books and libraries are split into pages
+		delay = math.max(1,tonumber(delay) or 1)
+		-- We split it into pages and reverse it to avoid index shifting when deleting pages (now we delete the last page, not the first one)
+		local q, printed = _reverse_queue(self.__queue), 0
+		while #q > 0 and self.getInkLevel()*self.getPaperLevel() > 0 do
+			local res, err = pcall(_print_page, self, q[#q])
+			if res then
+				printed = printed + 1
+				table.remove(q)
+				sleep(delay)
+			else
+				-- Reverse back
+				self.__queue = _reverse_queue(q)
+				if not preserveError then error(err) end
+				break
+			end
+		end
+		if #q == 0 then
+			self.__queue = {}
+		elseif self.getInkLevel()*self.getPaperLevel() == 0 then
+			if not preserveError then error("Not enough ink or paper") end
+		end
+		
+		return printed
+	end
+	self.printLibrary = function(libr)
+		expect(1,libr, "Library")
+		if not noCheck then
+			local pages = 0
+			for _,book in pairs(libr) do pages = pages + #book end
+			if (self.getInkLevel() < pages or self.getPaperLevel() < pages) then
+				error("Not enough ink or paper for printing library")
+			end
+		end
+		local printed = 0
+		for _,book in pairs(libr) do
+			printed = printed + self.printBook(book, noCheck)
+		end
+		return printed
+	end
+	self.printBook = function(book, noCheck)
+		expect(1,book, "Book")
+		if not noCheck and (self.getInkLevel() < #book or self.getPaperLevel() < #book)
+			then error("Not enough ink or paper for printing book")
+		end
+		local printed = 0
+		for _,page in pairs(book) do
+			self.printPage(page, noCheck)
+		end
+		return #book
+	end
+	self.printPage = function(page, noCheck)
+		expect(1,page, "Page")
+		if not noCheck and self.getInkLevel()*self.getPaperLevel() == 0 then
+			error("Not enough ink or paper for printing page")
+		end
+		return _print_page(self, page)
+	end
 	return self
 end
 Peripheral = epf.wrapperFixer(Peripheral, "printer", "Printer")
-local Page = {} -- Single page
-local Book = {} -- Book with pages
-local Library = {} -- Array of books
-Book.MAX_PAGES = 16
-Page.LINES_PER_PAGE = 21
+
 Page.LINE_MAX_LENGTH = 25
+Page.LINES_PER_PAGE = 21 -- Page max 525 characters
+Book.MAX_PAGES = 16 -- Book max 8400 characters
 
 -- Metatable fo Pages
 local pageMeta = {
@@ -89,7 +210,9 @@ local pageMeta = {
 	__tostring = function(self)
 		return table.concat(self.lines,'\n')
 	end,
-	__type = "Page",
+	__subtype = "Page",
+	__name = "utility",
+	__len = function(self) return #self.lines end,
 }
 
 --[[
@@ -161,7 +284,9 @@ local bookMeta = {
 	__tostring = function(self)
 		return self.name.." Pages: "..tostring(#self.pages)
 	end,
-	__type = "Book",
+	__subtype = "Book",
+	__name = "utility",
+	__len = function(self) return #self.pages end,
 }
 
 --[[
@@ -224,7 +349,7 @@ function Book.newEx(text, titles, name, fixed)
 		if l == 0 then l = Page.LINES_PER_PAGE * Book.MAX_PAGES end
 		l = math.ceil(l/Page.LINES_PER_PAGE)
 		for i=l, 1, -1 do
-			pages[i], text = Book.newPageEx(text, table.remove(titles), true)
+			pages[i], text = Page.newEx(text, table.remove(titles), true)
 		end
 	end
 	
@@ -252,7 +377,9 @@ local libraryMeta = {
 	__tostring = function(self)
 		return self.name.." Books: "..tostring(#self.books)
 	end,
-	__type = "Library",
+	__subtype = "Library",
+	__name = "utility",
+	__len = function(self) return #self.books end,
 }
 
 --[[
@@ -293,7 +420,7 @@ end
 	@tparam[opt=nil] string name Library name
 	@treturn table Array of books
 ]]
-function Library.new(text, titles, name, fixed)
+function Library.newEx(text, titles, name, fixed)
 	expect(1,text, "string", "table")
 	expect(2,titles, "table", "nil")
 	expect(2,fixed, "boolean", "nil")
@@ -310,7 +437,7 @@ function Library.new(text, titles, name, fixed)
 	
 	while #text > 0 do
 		local n = string.format("%s #%i", name or "Unnamed book", b)
-		books[b] = Book.new(text, titles, n, true)
+		books[b] = Book.newEx(text, titles, n, true)
 		b = b - 1
 	end
 	
@@ -319,11 +446,8 @@ function Library.new(text, titles, name, fixed)
 end
 
 local pblMeta = {
-__call = function(self, alt, ...)
-	if alt then return self.newEx(...)
-	else self.new(...)
-	end
-end}
+__call = function(self, ...) return self.newEx(...)end,
+}
 
 lib.Page = setmetatable(Page, pblMeta)
 lib.Book = setmetatable(Book, pblMeta)
@@ -341,7 +465,7 @@ function lib.help()
 		"Book",
 		"(text, [titles[, name]]) - Book with pages\n",
 		"Library",
-		"(text, [titles[, name]]) - Library with books",
+		"(text, [titles[, name]]) - Library with books\n",
 	}
 	local c = {
 		colors.red,
@@ -371,9 +495,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__type="library",
-	__name="Printer",
-	__subtype="peripheral wrapper library",
+	__name="library",
+	__subtype="Printer",
 	__tostring=function(self)
 		return "EPF-library for Printer (CC:Tweaked)"
 	end,

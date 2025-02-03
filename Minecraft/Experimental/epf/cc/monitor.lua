@@ -138,9 +138,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__type="library",
-	__name="Monitor",
-	__subtype="peripheral wrapper library",
+	__name="library",
+	__subtype="Monitor",
 	__tostring=function(self)
 		return "EPF-library for Monitor (CC:Tweaked)"
 	end,

@@ -153,8 +153,8 @@ function Peripheral.new(name, front)
 	
 	local self = Peripheral._new(name)
 	rawset(self, 'update', function(front)
-		rawset(self, '__front', front)
-		rawset(self, '__dir_tbl', epf.cardinalToRelativeEx(front))
+	rawset(self, '__front', front)
+	rawset(self, '__dir_tbl', epf.cardinalToRelativeEx(front))
 	end)
 	self.update(front)
 
@@ -195,9 +195,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__type="library",
-	__name="RedstoneRelay",
-	__subtype="peripheral wrapper library",
+	__name="library",
+	__subtype="RedstoneRelay",
 	__tostring=function(self)
 		return "EPF-library for Redstone Relay (CC:Tweaked)"
 	end,

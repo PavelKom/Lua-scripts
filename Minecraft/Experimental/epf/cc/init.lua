@@ -9,7 +9,7 @@
 
 local epf = require 'epf'
 
-local lib = {}
+local lib = {lib={}, p={}, u={}}
 
 local function script_path()
    local str = debug.getinfo(2, "S").source:sub(2)
@@ -24,13 +24,22 @@ for _,v in pairs(fs.list(rel_path)) do
 		if not _m.__name then
 			error("[EPF.CC] Library name not specific for "..p)
 		end
-		lib[_m.__name] = l
+		lib.lib[_m.__name] = l
+		for k,v in pairs(l) do
+			if custype(v) == "peripheral wrapper" then
+				if lib.p[k] then error("Duplicate peripheral names!")
+				lib.p[k] = v
+			elseif custype(v) == "peripheral wrapper" then
+				if lib.u[k] then error("Duplicate utility names!")
+				lib.u[k] = v
+			end
+		end
 	end
 end
 
 lib = setmetatable(lib, {
-	__type="library",
-	__subtype="peripheral wrappers manager library",
+	__name="library",
+	__subtype="MOD_CCTweaked",
 	__tostring=function(self)
 		return "EPF-library for CC:Tweaked"
 	end,

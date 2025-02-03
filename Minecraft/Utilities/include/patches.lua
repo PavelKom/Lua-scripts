@@ -37,7 +37,8 @@ if not _G.raw_ipairs then
 		return raw_ipairs(t)
 	end
 end
-if not _G.raw_type then
+--[[
+if not _G.raw_type then -- Bad idea
 	_G.raw_type = _G.type -- Copy default type function as raw_type
 	_G.type = function(t)
 		local metatable = getmetatable(t)
@@ -55,6 +56,24 @@ if not _G.raw_type then
 		return raw_type(t)
 	end
 end
+]]
+if not _G.custype -- Custom type
+	_G.custype = function(t)
+		local metatable = getmetatable(t)
+		if metatable and metatable.__name then
+			if type(metatable.__name) == 'function' then -- If __name is function
+				return metatable.__name(t)
+			else -- If type not function but callable
+				local t = getmetatable(metatable.__name)
+				if t and t.__call then
+					return metatable.__name(t)
+				end
+			end
+			return metatable.__name
+		end
+		return type(t)
+	end
+end
 if not _G.subtype then
 	_G.subtype = function(t)
 		local metatable = getmetatable(t)
@@ -69,7 +88,7 @@ if not _G.subtype then
 			end
 			return metatable.__subtype
 		end
-		return type(t)
+		return custype(t)
 	end
 end
 
@@ -100,7 +119,7 @@ local expect = dofile("rom/modules/main/cc/expect.lua").expect
 	@treturn table Copy of obj
 ]]
 function table.copy(obj, seen)
-  if type(obj) ~= 'table' then return obj end
+  if raw_type(obj) ~= 'table' then return obj end
   if seen and seen[obj] then return seen[obj] end
   local s = seen or {}
   local res = {}

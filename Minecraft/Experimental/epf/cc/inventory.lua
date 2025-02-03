@@ -81,9 +81,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="Inventory",
-	__type="library",
-	__subtype="peripheral wrapper library",
+	__subtype="Inventory",
+	__name="library",
 	__tostring=function(self)
 		return "EPF-library for Inventory (CC:Tweaked)"
 	end,

@@ -61,8 +61,7 @@ lib.RotationSpeedController = Peripheral
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="RotationSpeedController",
-	__type="library",
-	__subtype="peripheral wrapper library"
+	__subtype="RotationSpeedController",
+	__name="library",
 })
 return lib

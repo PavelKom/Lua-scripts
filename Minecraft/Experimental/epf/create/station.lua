@@ -46,10 +46,10 @@ function Peripheral.__init(self)
 		name = function(name) return pcall(self.setStationName,name) end,
 		train = function(name) return pcall(self.setTrainName,name) end,
 		schedule = function(schedule)
-			if type(schedule) == 'table' then
-				return pcall(self.setSchedule,schedule)
-			elseif type(schedule) == 'Schedule' then
+			if subtype(schedule) == 'Schedule' then
 				schedule.toStation(self)
+			elseif type(schedule) == 'table' then
+				return pcall(self.setSchedule,schedule)
 			end
 		end,
 	}
@@ -475,10 +475,10 @@ function Schedule.new(data)
 	
 	setmetatable(self, {
 		__tostring = function(self)
-			return string.format("%s %s", type(self), Schedule.toJson(self))
+			return string.format("%s %s", subtype(self), Schedule.toJson(self))
 		end,
-		__type = "Schedule",
-		--__subtype = "utility",
+		__name = "utility",
+		__subtype = "Schedule",
 	})
 
 	return self
@@ -493,7 +493,7 @@ function Schedule.fromStation(station)
 end
 function Schedule.toStation(schedule, station)
 	local tbl
-	if type(schedule) == 'Schedule' then
+	if subtype(schedule) == 'Schedule' then
 		tbl = schedule.schedule
 	else
 		tbl = schedule
@@ -519,8 +519,7 @@ lib.Schedule = setmetatable(Schedule, {__call=function(self, ...) return Schedul
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="TrainStation",
-	__type="library",
-	__subtype="peripheral wrapper library"
+	__subtype="TrainStation",
+	__name="library",
 })
 return lib

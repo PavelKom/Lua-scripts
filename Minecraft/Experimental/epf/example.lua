@@ -84,7 +84,7 @@ lib.Monitor = Peripheral -- Add Peripheral to library
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call, -- Calling library is equal as calling Peripheral.new()
-	__type="library",
+	__name="library",
 	__subtype="peripheral wrapper library"
 })
 --[[ Note: You can declare Peripheal.__call (without a metatable) to call wrapped peripherals as functions.

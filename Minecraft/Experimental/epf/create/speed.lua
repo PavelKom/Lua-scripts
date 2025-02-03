@@ -28,9 +28,8 @@ lib.Speedometer = Peripheral
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="Speedometer",
-	__type="library",
-	__subtype="peripheral wrapper library"
+	__subtype="Speedometer",
+	__name="library",
 })
 
 return lib

@@ -56,9 +56,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="EnergyStorage",
-	__type="library",
-	__subtype="peripheral wrapper library",
+	__subtype="EnergyStorage",
+	__name="library",
 	__tostring=function(self)
 		return "EPF-library for Energy Storage (CC:Tweaked)"
 	end,

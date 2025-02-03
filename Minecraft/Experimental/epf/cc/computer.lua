@@ -60,9 +60,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__type="library",
-	__name="Computer",
-	__subtype="peripheral wrapper library",
+	__name="library",
+	__subtype="Computer",
 	__tostring=function(self)
 		return "EPF-library for Computer (CC:Tweaked)"
 	end,

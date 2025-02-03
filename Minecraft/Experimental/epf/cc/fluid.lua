@@ -77,9 +77,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="FluidStorage",
-	__type="library",
-	__subtype="peripheral wrapper library",
+	__subtype="FluidStorage",
+	__name="library",
 	__tostring=function(self)
 		return "EPF-library for Fluid Storage (CC:Tweaked)"
 	end,

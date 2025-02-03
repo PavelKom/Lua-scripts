@@ -29,8 +29,8 @@ for _,v in pairs(fs.list(rel_path)) do
 end
 
 lib = setmetatable(lib, {
-	__type="library",
-	__subtype="peripheral wrappers manager library",
+	__name="library",
+	__subtype="MOD_Create",
 	__tostring=function(self)
 		return "EPF-library for Create"
 	end,

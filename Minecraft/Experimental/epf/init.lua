@@ -1,7 +1,7 @@
 --[[
 Extended Peripherals Framework
 Author: PavelKom
-Version 2.2
+Version 2.3.1
 	
 Library for extending wrapped peripheral by adding get/set properties and other.
 
@@ -33,6 +33,12 @@ end
 local expect = dofile("rom/modules/main/cc/expect.lua").expect
 
 local epf = {}
+
+settings.define("_EPF_TAB", {
+    description = "Tabulate length",
+    default = 1,
+    type = "number",
+})
 
 --[[
 	Getter metamethod. With static.
@@ -236,7 +242,7 @@ end
 	@treturn boolean Equality result
 ]]
 function epf.EQUAL(self, other)
-	return	type(self) == type(other) and -- both peripherals or wrappers
+	return	custype(self) == custype(other) and -- both peripherals or wrappers
 			subtype(self) == subtype(other) and -- same peripheral type (Modem)
 			self.type == other.type and -- same peripheral name (modem)
 			peripheral.getName(self) == peripheral.getName(other) -- same name (modem_0)
@@ -333,7 +339,6 @@ function epf.wrapperFixer(tbl, _type, _name)
 
 	-- Example: type == 'modem', __subtype == 'Modem'
 	tbl.type = tbl.type or _type or error("Peripheral type not specific")
-	tbl.__type = "peripheral wrapper"
 	tbl.__subtype = tbl.__subtype or _name or error("Peripheral type not specific")
 
 	local _m = getmetatable(tbl) or {}
@@ -346,7 +351,7 @@ function epf.wrapperFixer(tbl, _type, _name)
 		else _m.__call = function(self,...) return epf.simpleNew(tbl) end
 		end
 	end
-	_m.__type= _m.__type or tbl.__type
+	_m.__name= "peripheral wrapper"
 	_m.__subtype= _m.__subtype or tbl.__subtype
 	_m.__eq= _m.__eq or tbl.__eq or epf.EQUAL
 	_m.__tostring = _m.__tostring or tbl.__tostring or epf.WRAPPER_STR
@@ -361,8 +366,7 @@ end
 	@treturn table Fixed wrapper table
 ]]
 function epf.simpleNew(tbl)
-	expect(1, tbl, "peripheral wrapper", "table")
-	--assert(tbl, "Peripheral wrapper not specific")
+	assert(custype(tbl) == 'peripheral wrapper', "Peripheral (or wrapper) not specific")
 	return function(name)
 		local self = name and peripheral.wrap(name) or peripheral.find(tbl.type)
 		assert(self, string.format("Peripheral '%s' not founded", name and name or tbl.type))
@@ -399,7 +403,6 @@ function epf.simpleNew(tbl)
 		_m.__ipairs = tbl.__metas.__ipairs
 		_m.__tostring = tbl.__str or tbl.__metas.__tostring -- tbl.__str -- tostring for objects
 		_m.__call = tbl.__call or nil -- Caller for object.  Test.__call(obj)
-		_m.__type = "peripheral"
 		_m.__eq = tbl.__eq or epf.EQUAL
 		_m.__subtype = tbl.__subtype
 		_m.__super = tbl -- For getting wrapper
@@ -453,7 +456,7 @@ end
 	@treturn table pos sub-table for nD movement
 ]]
 function epf.subtablePos(tbl, getter, setter, keys, cfg)
-	expect(1, tbl, "peripheral wrapper", "peripheral", "table")
+	expect(1, getter, "peripheral", 'peripheral wrapper')
 	expect(2, getter, "function")
 	expect(3, setter, "function", "nil")
 	expect(4, keys, "table", "nil")
@@ -605,12 +608,11 @@ local colorNames = {
 	@treturn table palette sub-table for working with color palette
 ]]
 function epf.subtablePalette(tbl, getter, setter, cfg)
-	expect(1, tbl, "peripheral wrapper", "peripheral", "table")
+	expect(1, getter, "peripheral", 'peripheral wrapper')
 	expect(2, getter, "function")
 	expect(3, setter, "function", "nil")
 	expect(4, cfg, "table", "nil")
 	
-	--assert(type(tbl) == 'table', "Peripheral wrapper not specific")
 	--assert(type(getter) == 'function', "Palette getter not specific")
 	--assert(setter == nil or type(setter) == 'function',
 	--	"Palette setter not nil/function")
@@ -808,15 +810,13 @@ end
 	@treturn table pos sub-table for nD movement
 ]]
 function epf.subtableSide(tbl, getter, setter, caller, pair, cfg)
-	expect(1, tbl, "peripheral wrapper", "peripheral", "table")
+	expect(1, getter, "peripheral", 'peripheral wrapper')
 	expect(2, getter, "function")
 	expect(3, setter, "function", "nil")
 	expect(4, caller, "function", "nil")
 	expect(5, pair, "function", "nil")
 	expect(6, cfg, "table", "nil")
-	--[[
-	assert(type(tbl) == 'table', "Peripheral wrapper not specific")
-	assert(type(getter) == 'function', "Side getter not specific")
+	--[[assert(type(getter) == 'function', "Side getter not specific")
 	assert(setter == nil or type(setter) == 'function',
 		"Side setter not nil/function")
 	assert(caller == nil or type(caller) == 'function',
@@ -907,6 +907,27 @@ function epf.fixString(text, remove_empty)
 	end
 	return text
 end
+
+--[[
+	Replace \t to array of spaces
+	@tparam string text String for fixing
+	@tparam[opt=nil] number custom_len Remove empty strings
+	@treturn string Fixed string Alignment step length
+]]
+function epf.fixTab(text, custom_len)
+	expect(1, text, "string")
+	expect(2, custom_len, "number", "nil")
+	custom_len = math.max(1, custom_len or settings.get("_EPF_TAB", 1))
+	local t = text:find('\t')
+	while t do
+		t = (t-1) % custom_len
+		if t == 0 then t = custom_len end
+		text = text:gsub('\t', (" "):rep(t), 1)
+		t = text:find('\t')
+	end
+	return text
+end
+
 --[[
 	Cut text by length
 	@tparam string text String for cutting
@@ -919,7 +940,7 @@ function epf.iterLine(text, length, fixed)
 	expect(1, text, "string")
 	expect(2, length, "number")
 	expect(3,fixed, "boolean", "nil")
-	if not fixed then text = epf.fixString(text) end
+	if not fixed then text = epf.fixTab(epf.fixString(text)) end
 	local t = string.sub(text, 1,length)
 	return t, text:sub(length+1)
 end
@@ -936,7 +957,7 @@ function epf.iterLineEx(text, length, fixed)
 	expect(1, text, "string")
 	expect(2, length, "number")
 	expect(3,fixed, "boolean", "nil")
-	if not fixed then text = epf.fixString(text) end
+	if not fixed then text = epf.fixTab(epf.fixString(text)) end
 	local t = string.sub(text, 1,length+1) -- Check \n in end of line
 	local i = string.find(t, "\n")
 	if i then 
@@ -958,10 +979,10 @@ function epf.splitText(text, length, fixed)
 	expect(1, text, "string")
 	expect(2, length, "number")
 	expect(3,fixed, "boolean", "nil")
-	if not fixed then text = epf.fixString(text, length) end
+	if not fixed then text = epf.fixTab(epf.fixString(text, length)) end
 	local spl = {}
 	while #text > 0 do
-		spl[#spl+1], text = Book.iterLineEx(text, length, true)
+		spl[#spl+1], text = epf.iterLineEx(text, length, true)
 	end
 	return spl
 end
@@ -976,7 +997,40 @@ end
 setmetatable(epf.INSTRUMENTS, {
 	__index = epf.GETTER_TO_LOWER(epf.INSTRUMENTS.bass)})
 
-if settings.get("_EFP_GLOBAL", false) and not _G.epf then
+--[[
+	Table with color tags for /say command
+]]
+epf.CHATCOLORS = {
+	BLACK = '&0',DARK_BLUE = '&1',DARK_GREEN = '&2',DARK_AQUA = '&3',
+	DARK_RED = '&4',DARK_PURPLE = '&5',GOLD = '&6',GRAY = '&7',
+	DARK_GRAY = '&8',BLUE = '&9',GREEN = '&a',AQUA = '&b',
+	RED = '&c',LIGHT_PURPLE = '&d',YELLOW = '&e',WHITE = '&f',
+	
+	OBFUSCATED = '&k',BOLD = '&l',STRIKETHROUGH = '&m',
+	UNDERLINE = '&n',ITALIC = '&o',
+	RESET = '&r',
+}
+for k, v in pairs(epf.CHATCOLORS) do
+	if epf.CHATCOLORS[string.upper(v)] == nil then epf.CHATCOLORS[string.upper(v)] = v end
+	v2 = string.upper(string.gsub(v ,"&", ""))
+	if epf.CHATCOLORS[v2] == nil then epf.CHATCOLORS[v2] = v end
+end
+epf.CHATCOLORS.GREY = epf.CHATCOLORS.GRAY
+epf.CHATCOLORS.DARK_GREY = epf.CHATCOLORS.DARK_GRAY
+epf.CHATCOLORS.GLITCH = epf.CHATCOLORS.OBFUSCATED
+epf.CHATCOLORS.UNDER = epf.CHATCOLORS.UNDERLINE
+epf.CHATCOLORS.STRIKE = epf.CHATCOLORS.STRIKETHROUGH
+setmetatable(lib.CHATCOLORS, {
+	__index = getset.GETTER_TO_UPPER(epf.CHATCOLORS.RESET)
+})
+--[[
+	Create color/style-formatted text for message
+]]
+function epf.colorText(text, color, effect, resetToDefault)
+	return string.format("%s%s%s%s", color and epf.CHATCOLORS[color] or '', effect and epf.CHATCOLORS[effect] or '', text, resetToDefault and epf.CHATCOLORS.RESET or '')
+end
+
+if settings.get("_EPF_GLOBAL", false) and not _G.epf then
 	_G.epf = epf
 end
 

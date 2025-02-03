@@ -101,7 +101,8 @@ function Sequence.new()
 	end
 	
 	setmetatable(self,{
-	__type = "Sequence",
+	__name = 'utility',
+	__subtype = "Sequence",
 	__call = _call,
 	__pairs = _pairs,
 	})
@@ -134,8 +135,7 @@ lib.Sequence = setmetatable(Sequence,{
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__name="SequencedGearshift",
-	__type="library",
-	__subtype="peripheral wrapper library"
+	__subtype="SequencedGearshift",
+	__name="library",
 })
 return lib

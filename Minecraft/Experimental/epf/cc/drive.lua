@@ -64,9 +64,8 @@ end
 local _m = getmetatable(Peripheral)
 lib = setmetatable(lib, {
 	__call=_m.__call,
-	__type="library",
-	__name="Drive",
-	__subtype="peripheral wrapper library",
+	__name="library",
+	__subtype="Drive",
 	__tostring=function(self)
 		return "EPF-library for Drive (CC:Tweaked)"
 	end,
