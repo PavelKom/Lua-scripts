@@ -350,23 +350,21 @@ function epf.wrapperFixer(tbl, _type, _name)
 	-- Example: type == 'modem', __subtype == 'Modem'
 	tbl.type = tbl.type or _type or error("Peripheral type not specific")
 	tbl.__subtype = tbl.__subtype or _name or error("Peripheral type not specific")
+	tbl.__names = tbl.__names or {}
 
 	local _m = getmetatable(tbl) or {}
-	_m.__call = _m.__call
 	if not tbl.new then
-		tbl.new = epf.simpleNew(tbl)
+		tbl.new = epf.simpleNew(tbl) --(tbl)
 	end
 	if not _m.__call then
-		if tbl.new then _m.__call = function(self,...) return tbl.new(...) end
-		else _m.__call = function(self,...) return epf.simpleNew(tbl) end
-		end
+		_m.__call = function(self, ...) return tbl.new(...) end
 	end
 	_m.__name= "peripheral wrapper"
 	_m.__subtype= _m.__subtype or tbl.__subtype
 	_m.__eq= _m.__eq or tbl.__eq or epf.EQUAL
 	_m.__tostring = _m.__tostring or tbl.__tostring or epf.WRAPPER_STR
 	_m.__len = _m.__len or _tbl_len
-	
+		
 	return setmetatable(tbl, _m)
 end
 
@@ -1047,6 +1045,20 @@ setmetatable(epf.CHATCOLORS, {
 ]]
 function epf.colorText(text, color, effect, resetToDefault)
 	return string.format("%s%s%s%s", color and epf.CHATCOLORS[color] or '', effect and epf.CHATCOLORS[effect] or '', text, resetToDefault and epf.CHATCOLORS.RESET or '')
+end
+
+function epf.rawTime(hours, minutes, seconds)
+	return hours + (minutes/60) + (seconds/3600)
+end
+
+function epf.waitEventLoop(eventname,func)
+	if func == nil then
+		error('epf.waitEventLoopEx must have callback function')
+	end
+	local loop = true
+	while loop do
+		loop = func(os.pullEvent(eventname))
+	end
 end
 
 if settings.get("_EPF_GLOBAL", false) and not _G.epf then

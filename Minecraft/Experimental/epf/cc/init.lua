@@ -27,10 +27,10 @@ for _,v in pairs(fs.list(rel_path)) do
 		lib.lib[_m.__name] = l
 		for k,v in pairs(l) do
 			if custype(v) == "peripheral wrapper" then
-				if lib.p[k] then error("Duplicate peripheral names!")
+				if lib.p[k] then error("Duplicate peripheral names!") end
 				lib.p[k] = v
 			elseif custype(v) == "peripheral wrapper" then
-				if lib.u[k] then error("Duplicate utility names!")
+				if lib.u[k] then error("Duplicate utility names!") end
 				lib.u[k] = v
 			end
 		end
