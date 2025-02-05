@@ -15,7 +15,7 @@ For example see example.lua
 ]]
 
 -- Patches
-require "lib.patches"
+require "epf.patches"
 
 -- You can set this library as global API by createing setting
 --[[ Define setting
@@ -355,6 +355,15 @@ function epf.wrapperFixer(tbl, _type, _name)
 	_m.__subtype= _m.__subtype or tbl.__subtype
 	_m.__eq= _m.__eq or tbl.__eq or epf.EQUAL
 	_m.__tostring = _m.__tostring or tbl.__tostring or epf.WRAPPER_STR
+	_m.__len = _m.__len or function(self)
+		if not self.__names then return 0 end
+		local i, k = -1, nil
+		repeat
+			k, _ = next(self.__names, k)
+			i = i + 1
+		until k == nil
+		return i
+	end
 	
 	return setmetatable(tbl, _m)
 end
@@ -375,6 +384,14 @@ function epf.simpleNew(tbl)
 		-- Get wrapped peripheral if it already registered
 		if tbl.__names and tbl.__names[name] then
 			return tbl.__names[name]
+		end
+		self.isValid = function() return peripheral.isPresent(name) end
+		self.isValidEx = function()
+			if not peripheral.isPresent(name) then
+				if tbl.__names and tbl.__names[name] then tbl.__names[name] = nil end
+				return false
+			end
+			return true
 		end
 		
 		self.__getter = {}
