@@ -3,7 +3,7 @@
 	Author: PavelKom
 	Version: 0.2
 	Extended Peripherals Framework version: 2.3
-	https://advancedperipherals.netlify.app/peripherals/block_reader/
+	https://advancedperipherals.netlify.app/peripherals/redstone_integrator/
 	
 	Note: RedstoneIntegrator not support bundled inputs/outputs. Use RedstoneRelay (CC:Tweaked version >=1.114.0)
 ]]
