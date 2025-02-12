@@ -48,15 +48,6 @@ local function eraseRSC(s)
     end
     s:_func()
 end
-local function addRSC(mon, name)
-    local offset = #mon_list[mon]+4
-    local rsc = RSC{mon_list[mon][1], target=mon,rsc=name,x=offset,y=offset}
-    rsc.__buttons.bErase._func = rsc.__buttons.bErase.func
-    rsc.__buttons.bErase.func = eraseRSC
-    mon_list[mon][#mon_list[mon]+1] = rsc
-    --sc:draw()
-    return rsc
-end
 local function eraseFrame(s)
     local mon = s.target
     local c = s._PARENT._CHILDREN[1].color_bg
@@ -91,6 +82,16 @@ local function fixMonitor(mon)
     end
     StressBar{mon_list[mon][1], target=mon,stress=stressometer_name,x=3,y=3,label=_name}._PARENT:draw()
 end
+local function addRSC(mon, name)
+    fixMonitor(mon)
+    local offset = #mon_list[mon]+4
+    local rsc = RSC{mon_list[mon][1], target=mon,rsc=name,x=offset,y=offset}
+    rsc.__buttons.bErase._func = rsc.__buttons.bErase.func
+    rsc.__buttons.bErase.func = eraseRSC
+    mon_list[mon][#mon_list[mon]+1] = rsc
+    --sc:draw()
+    return rsc
+end
 local function read_cfg(s)
     if not fs.exists(cfg_name) then
         return
@@ -120,7 +121,6 @@ local function read_cfg(s)
                                     break
                                 end
                             end
-                            fixMonitor(mon)
                             mon_list[mon][1]:addCHILD(rsc)
                             mon_list[mon][1]:draw()
                             list[1]:draw()
@@ -145,7 +145,7 @@ function FUNC_TABLE.save_cfg(s)
         f:close()
     end
     for mon, list in pairs(mon_list) do
-        local monName = mon == term and 'term' or peripheral.getName(mon)
+        local monName = mon == term.native() and 'term' or peripheral.getName(mon)
         for i=#list, 2, -1 do
             local master = list[i]
             local name = master.__pName
