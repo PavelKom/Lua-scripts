@@ -22,11 +22,11 @@ lantanoid = [i for i in range(57,72)] # 57-71
 actinoid  = [i for i in range(89,104)] # 89-103
 
 # Me Bridge is a bit buggy when working with Alchemistry fission and fusion reactors (cannot load/unload items correctly, tested on 1.19.2). RS Bridge is used instead, and ME is used to obtain the main element using Dissolver. 
-for_me_bridge = [6]
+for_me_bridge =  [i for i in range(1,119)]  #[6]
 
 x_offset = 0
 y_offset = 0
-x_l_a_offset = 5
+x_l_a_offset = 2
 y_l_a_offset = 3
 
 with open(PATH) as f:
@@ -72,7 +72,12 @@ for element in d2:
 for i, v in new_data_dict.items():
     # Add requires
     # Fusion chamber
-    if i >= main_element_id+2: # Oxygen, Fluorine, ...
+    if i == main_element_id*2: # Magnesium
+        new_data_dict[i]['required'] = [
+            new_data_dict[main_element_id-1]['name'],
+            new_data_dict[main_element_id+1]['name']
+        ]
+    elif i >= main_element_id+2: # Oxygen, Fluorine, ...
         new_data_dict[i]['required'] = [
             new_data_dict[i-main_element_id]['name'],
             new_data_dict[main_element_id]['name']
@@ -98,7 +103,7 @@ new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'  ',
     'x':new_data_dict[lantanoid[0]]['x']-2,
-    'y':new_data_dict[lantanoid[0]-1]['y'],
+    'y':new_data_dict[lantanoid[0]]['y'],
     'color': 'blue',
     'comment':'Color label before La(57)',
     })
@@ -114,7 +119,7 @@ new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'  ',
     'x':new_data_dict[actinoid[0]]['x']-2,
-    'y':new_data_dict[actinoid[0]-1]['y'],
+    'y':new_data_dict[actinoid[0]]['y'],
     'color': 'purple',
     'comment':'Color label before Ac(89)',
     })
@@ -122,35 +127,35 @@ new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'Cannot be crafted',
     'x':1 + x_offset,
-    'y':new_data_dict[actinoid[0]-1]['y']+2,
+    'y':new_data_dict[actinoid[0]]['y']+2 + y_offset,
     'color': 'red',
     })
 new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'Crafting',
     'x':1 + x_offset,
-    'y':new_data_dict[actinoid[0]-1]['y']+3,
+    'y':new_data_dict[actinoid[0]]['y']+3 + y_offset,
     'color': 'yellow',
     })
 new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'No craft needed',
     'x':1 + x_offset,
-    'y':new_data_dict[actinoid[0]-1]['y']+4,
+    'y':new_data_dict[actinoid[0]]['y']+4 + y_offset,
     'color': 'green',
     })
 new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'Lantanide',
     'x':1 + x_offset,
-    'y':new_data_dict[actinoid[0]-1]['y']+5,
+    'y':new_data_dict[actinoid[0]]['y']+5 + y_offset,
     'color': 'blue',
     })
 new_data_list.append({
     #'atomic_number': 0,
     'abbreviation':'Actinide',
     'x':1 + x_offset,
-    'y':new_data_dict[actinoid[0]-1]['y']+5,
+    'y':new_data_dict[actinoid[0]]['y']+6 + y_offset,
     'color': 'purple',
     })
 

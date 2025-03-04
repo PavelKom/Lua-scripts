@@ -9,9 +9,9 @@
 ]]
 local epf = require 'epf'
 
-if _G._CC_MINOR < 114 then
-	error("Redstone Relay added in CC 1.114.0. Update mod for using Redstone Relay")
-end
+--if _G._CC_MINOR < 114 then
+--	error("Redstone Relay added in CC 1.114.0. Update mod for using Redstone Relay")
+--end
 
 local expect = require "cc.expect"
 local expect = expect.expect

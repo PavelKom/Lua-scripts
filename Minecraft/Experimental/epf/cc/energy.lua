@@ -15,6 +15,9 @@ function Peripheral.__init(self)
 	self.__getter = {
 		energy = function() return self.getEnergy() end,
 		capacity = function() return self.getEnergyCapacity() end,
+		full = function() return self.getEnergy() == self.getEnergyCapacity() end,
+		empty = function() return self.getEnergy() == 0 end,
+		filled = function() return self.getEnergy() / self.getEnergyCapacity() end,
 	}
 	self.__getter.cap = self.__getter.capacity
 	

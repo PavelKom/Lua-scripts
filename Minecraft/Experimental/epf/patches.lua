@@ -342,11 +342,11 @@ end
 	@treturn number Blue absolute value
 ]]
 function colors.unpackAbsRGB(hex)
-	expect(1, rgb, "number")
+	expect(1, hex, "number")
     return
-        bit32.band(bit32.rshift(rgb, 16), 0xFF),
-        bit32.band(bit32.rshift(rgb, 8), 0xFF),
-        bit32.band(rgb, 0xFF)
+        bit32.band(bit32.rshift(hex, 16), 0xFF),
+        bit32.band(bit32.rshift(hex, 8), 0xFF),
+        bit32.band(hex, 0xFF)
 end
 
 colours.norm = colors.norm

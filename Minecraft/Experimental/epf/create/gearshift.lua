@@ -95,7 +95,7 @@ function Sequence.new()
 	self.save = function()
 		local t = {}
 		for _,v in pairs(self.__seq) do
-			t[#t+1]={v[1] and 'rotate' or move, v[2], v[3]}
+			t[#t+1]={v[1] and 'rotate' or 'move', v[2], v[3]}
 		end
 		return t
 	end

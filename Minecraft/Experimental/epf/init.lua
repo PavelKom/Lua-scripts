@@ -806,7 +806,7 @@ function epf.cardinalToRelativeEx(front)
 	end
 	
 	return setmetatable(tbl, {
-	__index == function(self, index)
+	__index = function(self, index)
 		return rawget(self,string.lower(index)) or 'front'
 	end,
 	})
@@ -1029,7 +1029,7 @@ epf.CHATCOLORS = {
 }
 for k, v in pairs(epf.CHATCOLORS) do
 	if epf.CHATCOLORS[string.upper(v)] == nil then epf.CHATCOLORS[string.upper(v)] = v end
-	v2 = string.upper(string.gsub(v ,"&", ""))
+	local v2 = string.upper(string.gsub(v ,"&", ""))
 	if epf.CHATCOLORS[v2] == nil then epf.CHATCOLORS[v2] = v end
 end
 epf.CHATCOLORS.GREY = epf.CHATCOLORS.GRAY

@@ -60,7 +60,6 @@ lib = setmetatable(lib, {
 	__call=_m.__call,
 	__name="library",
 	__subtype="CommandBlock",
-	__subtype="peripheral wrapper library",
 	__tostring=function(self)
 		return "EPF-library for Command Block (CC:Tweaked)"
 	end,

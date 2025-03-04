@@ -43,7 +43,7 @@ function Peripheral.__init(self)
 		if type(name) == 'table' then -- Already packed
 			return self.addItemToPlayer(direction,name)
 		else
-			return self.addItemToPlayer(direction, _pack_item(ntf, count, fromSlot, toSlot, nbt)})
+			return self.addItemToPlayer(direction, _pack_item(ntf, count, fromSlot, toSlot, nbt))
 		end
 	end
 	self.addItem = self.add
@@ -53,7 +53,7 @@ function Peripheral.__init(self)
 		if type(name) == 'table' then -- Already packed
 			return self.removeItemFromPlayer(direction,name)
 		else
-			return self.removeItemFromPlayer(direction, _pack_item(ntf, count, fromSlot, toSlot, nbt))
+			return self.removeItemFromPlayer(direction, _pack_item(name, count, fromSlot, toSlot, nbt))
 		end
 	end
 	self.removeItem = self.remove

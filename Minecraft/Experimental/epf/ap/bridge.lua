@@ -183,8 +183,8 @@ function MEBridge.__init(self)
 		end
 	end
 	self.runTask = function(index, callback)
-		if self.tasks[i] == nil then return -3 end
-		return self.tasks[i].craft(self, callback)
+		if self.tasks[index] == nil then return -3 end
+		return self.tasks[index].craft(self, callback)
 	end
 	self.runTasks = function(callback)
 		for _, v in pairs(self.tasks) do
@@ -362,8 +362,8 @@ function RSBridge.__init(self)
 		end
 	end
 	self.runTask = function(index, callback)
-		if self.tasks[i] == nil then return -3 end
-		return self.tasks[i].craft(self, callback)
+		if self.tasks[index] == nil then return -3 end
+		return self.tasks[index].craft(self, callback)
 	end
 	self.runTasks = function(callback)
 		for _, v in pairs(self.tasks) do

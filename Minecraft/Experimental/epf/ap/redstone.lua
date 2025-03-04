@@ -11,8 +11,10 @@ local epf = require 'epf'
 local expect = require "cc.expect"
 local expect = expect.expect
 
-local Peripheral = {}
+local lib = {}
 lib.EXTERNAL_TABLES = false
+
+local Peripheral = {}
 function Peripheral.__input_getter(self, side)
 	return self.getInput(epf.SIDES[side])
 end
@@ -86,7 +88,6 @@ function Peripheral.__init(self)
 end
 Peripheral = epf.wrapperFixer(Peripheral, "redstoneIntegrator", "Redstone Integrator")
 
-local lib = {}
 lib.RedstoneIntegrator = Peripheral
 
 function lib.help()

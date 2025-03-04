@@ -3,7 +3,7 @@
         {
             "abbreviation": "H ",
             "atomic_number": 1,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:hydrogen",
             "period": 1,
@@ -16,7 +16,7 @@
         {
             "abbreviation": "He",
             "atomic_number": 2,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:helium",
             "period": 1,
@@ -29,7 +29,7 @@
         {
             "abbreviation": "Li",
             "atomic_number": 3,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:lithium",
             "period": 2,
@@ -42,7 +42,7 @@
         {
             "abbreviation": "Be",
             "atomic_number": 4,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 2,
             "name": "chemlib:beryllium",
             "period": 2,
@@ -55,7 +55,7 @@
         {
             "abbreviation": "B ",
             "atomic_number": 5,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 13,
             "name": "chemlib:boron",
             "period": 2,
@@ -78,7 +78,7 @@
         {
             "abbreviation": "N ",
             "atomic_number": 7,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 15,
             "name": "chemlib:nitrogen",
             "period": 2,
@@ -91,7 +91,7 @@
         {
             "abbreviation": "O ",
             "atomic_number": 8,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 16,
             "name": "chemlib:oxygen",
             "period": 2,
@@ -105,7 +105,7 @@
         {
             "abbreviation": "F ",
             "atomic_number": 9,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 17,
             "name": "chemlib:fluorine",
             "period": 2,
@@ -119,7 +119,7 @@
         {
             "abbreviation": "Ne",
             "atomic_number": 10,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:neon",
             "period": 2,
@@ -133,7 +133,7 @@
         {
             "abbreviation": "Na",
             "atomic_number": 11,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:sodium",
             "period": 3,
@@ -147,13 +147,13 @@
         {
             "abbreviation": "Mg",
             "atomic_number": 12,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 2,
             "name": "chemlib:magnesium",
             "period": 3,
             "required": [
-                "chemlib:carbon",
-                "chemlib:carbon"
+                "chemlib:boron",
+                "chemlib:nitrogen"
             ],
             "x": 3,
             "y": 3
@@ -161,7 +161,7 @@
         {
             "abbreviation": "Al",
             "atomic_number": 13,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 13,
             "name": "chemlib:aluminum",
             "period": 3,
@@ -175,7 +175,7 @@
         {
             "abbreviation": "Si",
             "atomic_number": 14,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 14,
             "name": "chemlib:silicon",
             "period": 3,
@@ -189,7 +189,7 @@
         {
             "abbreviation": "P ",
             "atomic_number": 15,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 15,
             "name": "chemlib:phosphorus",
             "period": 3,
@@ -203,7 +203,7 @@
         {
             "abbreviation": "S ",
             "atomic_number": 16,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 16,
             "name": "chemlib:sulfur",
             "period": 3,
@@ -217,7 +217,7 @@
         {
             "abbreviation": "Cl",
             "atomic_number": 17,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 17,
             "name": "chemlib:chlorine",
             "period": 3,
@@ -231,7 +231,7 @@
         {
             "abbreviation": "Ar",
             "atomic_number": 18,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:argon",
             "period": 3,
@@ -245,7 +245,7 @@
         {
             "abbreviation": "K ",
             "atomic_number": 19,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:potassium",
             "period": 4,
@@ -259,7 +259,7 @@
         {
             "abbreviation": "Ca",
             "atomic_number": 20,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 2,
             "name": "chemlib:calcium",
             "period": 4,
@@ -273,7 +273,7 @@
         {
             "abbreviation": "Sc",
             "atomic_number": 21,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:scandium",
             "period": 4,
@@ -287,7 +287,7 @@
         {
             "abbreviation": "Ti",
             "atomic_number": 22,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 4,
             "name": "chemlib:titanium",
             "period": 4,
@@ -301,7 +301,7 @@
         {
             "abbreviation": "V ",
             "atomic_number": 23,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 5,
             "name": "chemlib:vanadium",
             "period": 4,
@@ -315,7 +315,7 @@
         {
             "abbreviation": "Cr",
             "atomic_number": 24,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 6,
             "name": "chemlib:chromium",
             "period": 4,
@@ -329,7 +329,7 @@
         {
             "abbreviation": "Mn",
             "atomic_number": 25,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 7,
             "name": "chemlib:manganese",
             "period": 4,
@@ -343,7 +343,7 @@
         {
             "abbreviation": "Fe",
             "atomic_number": 26,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 8,
             "name": "chemlib:iron",
             "period": 4,
@@ -357,7 +357,7 @@
         {
             "abbreviation": "Co",
             "atomic_number": 27,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 9,
             "name": "chemlib:cobalt",
             "period": 4,
@@ -371,7 +371,7 @@
         {
             "abbreviation": "Ni",
             "atomic_number": 28,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 10,
             "name": "chemlib:nickel",
             "period": 4,
@@ -385,7 +385,7 @@
         {
             "abbreviation": "Cu",
             "atomic_number": 29,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 11,
             "name": "chemlib:copper",
             "period": 4,
@@ -399,7 +399,7 @@
         {
             "abbreviation": "Zn",
             "atomic_number": 30,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 12,
             "name": "chemlib:zinc",
             "period": 4,
@@ -413,7 +413,7 @@
         {
             "abbreviation": "Ga",
             "atomic_number": 31,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 13,
             "name": "chemlib:gallium",
             "period": 4,
@@ -427,7 +427,7 @@
         {
             "abbreviation": "Ge",
             "atomic_number": 32,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 14,
             "name": "chemlib:germanium",
             "period": 4,
@@ -441,7 +441,7 @@
         {
             "abbreviation": "As",
             "atomic_number": 33,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 15,
             "name": "chemlib:arsenic",
             "period": 4,
@@ -455,7 +455,7 @@
         {
             "abbreviation": "Se",
             "atomic_number": 34,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 16,
             "name": "chemlib:selenium",
             "period": 4,
@@ -469,7 +469,7 @@
         {
             "abbreviation": "Br",
             "atomic_number": 35,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 17,
             "name": "chemlib:bromine",
             "period": 4,
@@ -483,7 +483,7 @@
         {
             "abbreviation": "Kr",
             "atomic_number": 36,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:krypton",
             "period": 4,
@@ -497,7 +497,7 @@
         {
             "abbreviation": "Rb",
             "atomic_number": 37,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:rubidium",
             "period": 5,
@@ -511,7 +511,7 @@
         {
             "abbreviation": "Sr",
             "atomic_number": 38,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 2,
             "name": "chemlib:strontium",
             "period": 5,
@@ -525,7 +525,7 @@
         {
             "abbreviation": "Y ",
             "atomic_number": 39,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:yttrium",
             "period": 5,
@@ -539,7 +539,7 @@
         {
             "abbreviation": "Zr",
             "atomic_number": 40,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 4,
             "name": "chemlib:zirconium",
             "period": 5,
@@ -553,7 +553,7 @@
         {
             "abbreviation": "Nb",
             "atomic_number": 41,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 5,
             "name": "chemlib:niobium",
             "period": 5,
@@ -567,7 +567,7 @@
         {
             "abbreviation": "Mo",
             "atomic_number": 42,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 6,
             "name": "chemlib:molybdenum",
             "period": 5,
@@ -581,7 +581,7 @@
         {
             "abbreviation": "Tc",
             "atomic_number": 43,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 7,
             "name": "chemlib:technetium",
             "period": 5,
@@ -595,7 +595,7 @@
         {
             "abbreviation": "Ru",
             "atomic_number": 44,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 8,
             "name": "chemlib:ruthenium",
             "period": 5,
@@ -609,7 +609,7 @@
         {
             "abbreviation": "Rh",
             "atomic_number": 45,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 9,
             "name": "chemlib:rhodium",
             "period": 5,
@@ -623,7 +623,7 @@
         {
             "abbreviation": "Pd",
             "atomic_number": 46,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 10,
             "name": "chemlib:palladium",
             "period": 5,
@@ -637,7 +637,7 @@
         {
             "abbreviation": "Ag",
             "atomic_number": 47,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 11,
             "name": "chemlib:silver",
             "period": 5,
@@ -651,7 +651,7 @@
         {
             "abbreviation": "Cd",
             "atomic_number": 48,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 12,
             "name": "chemlib:cadmium",
             "period": 5,
@@ -665,7 +665,7 @@
         {
             "abbreviation": "In",
             "atomic_number": 49,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 13,
             "name": "chemlib:indium",
             "period": 5,
@@ -679,7 +679,7 @@
         {
             "abbreviation": "Sn",
             "atomic_number": 50,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 14,
             "name": "chemlib:tin",
             "period": 5,
@@ -693,7 +693,7 @@
         {
             "abbreviation": "Sb",
             "atomic_number": 51,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 15,
             "name": "chemlib:antimony",
             "period": 5,
@@ -707,7 +707,7 @@
         {
             "abbreviation": "Te",
             "atomic_number": 52,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 16,
             "name": "chemlib:tellurium",
             "period": 5,
@@ -721,7 +721,7 @@
         {
             "abbreviation": "I ",
             "atomic_number": 53,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 17,
             "name": "chemlib:iodine",
             "period": 5,
@@ -735,7 +735,7 @@
         {
             "abbreviation": "Xe",
             "atomic_number": 54,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:xenon",
             "period": 5,
@@ -749,7 +749,7 @@
         {
             "abbreviation": "Cs",
             "atomic_number": 55,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:cesium",
             "period": 6,
@@ -763,7 +763,7 @@
         {
             "abbreviation": "Ba",
             "atomic_number": 56,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 2,
             "name": "chemlib:barium",
             "period": 6,
@@ -777,7 +777,7 @@
         {
             "abbreviation": "La",
             "atomic_number": 57,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:lanthanum",
             "period": 6,
@@ -785,13 +785,13 @@
                 "chemlib:antimony",
                 "chemlib:carbon"
             ],
-            "x": 10,
+            "x": 4,
             "y": 9
         },
         {
             "abbreviation": "Ce",
             "atomic_number": 58,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:cerium",
             "period": 6,
@@ -799,13 +799,13 @@
                 "chemlib:tellurium",
                 "chemlib:carbon"
             ],
-            "x": 12,
+            "x": 6,
             "y": 9
         },
         {
             "abbreviation": "Pr",
             "atomic_number": 59,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:praseodymium",
             "period": 6,
@@ -813,13 +813,13 @@
                 "chemlib:iodine",
                 "chemlib:carbon"
             ],
-            "x": 14,
+            "x": 8,
             "y": 9
         },
         {
             "abbreviation": "Nd",
             "atomic_number": 60,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:neodymium",
             "period": 6,
@@ -827,13 +827,13 @@
                 "chemlib:xenon",
                 "chemlib:carbon"
             ],
-            "x": 16,
+            "x": 10,
             "y": 9
         },
         {
             "abbreviation": "Pm",
             "atomic_number": 61,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:promethium",
             "period": 6,
@@ -841,13 +841,13 @@
                 "chemlib:cesium",
                 "chemlib:carbon"
             ],
-            "x": 18,
+            "x": 12,
             "y": 9
         },
         {
             "abbreviation": "Sm",
             "atomic_number": 62,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:samarium",
             "period": 6,
@@ -855,13 +855,13 @@
                 "chemlib:barium",
                 "chemlib:carbon"
             ],
-            "x": 20,
+            "x": 14,
             "y": 9
         },
         {
             "abbreviation": "Eu",
             "atomic_number": 63,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:europium",
             "period": 6,
@@ -869,13 +869,13 @@
                 "chemlib:lanthanum",
                 "chemlib:carbon"
             ],
-            "x": 22,
+            "x": 16,
             "y": 9
         },
         {
             "abbreviation": "Gd",
             "atomic_number": 64,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:gadolinium",
             "period": 6,
@@ -883,13 +883,13 @@
                 "chemlib:cerium",
                 "chemlib:carbon"
             ],
-            "x": 24,
+            "x": 18,
             "y": 9
         },
         {
             "abbreviation": "Tb",
             "atomic_number": 65,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:terbium",
             "period": 6,
@@ -897,13 +897,13 @@
                 "chemlib:praseodymium",
                 "chemlib:carbon"
             ],
-            "x": 26,
+            "x": 20,
             "y": 9
         },
         {
             "abbreviation": "Dy",
             "atomic_number": 66,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:dysprosium",
             "period": 6,
@@ -911,13 +911,13 @@
                 "chemlib:neodymium",
                 "chemlib:carbon"
             ],
-            "x": 28,
+            "x": 22,
             "y": 9
         },
         {
             "abbreviation": "Ho",
             "atomic_number": 67,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:holmium",
             "period": 6,
@@ -925,13 +925,13 @@
                 "chemlib:promethium",
                 "chemlib:carbon"
             ],
-            "x": 30,
+            "x": 24,
             "y": 9
         },
         {
             "abbreviation": "Er",
             "atomic_number": 68,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:erbium",
             "period": 6,
@@ -939,13 +939,13 @@
                 "chemlib:samarium",
                 "chemlib:carbon"
             ],
-            "x": 32,
+            "x": 26,
             "y": 9
         },
         {
             "abbreviation": "Tm",
             "atomic_number": 69,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:thulium",
             "period": 6,
@@ -953,13 +953,13 @@
                 "chemlib:europium",
                 "chemlib:carbon"
             ],
-            "x": 34,
+            "x": 28,
             "y": 9
         },
         {
             "abbreviation": "Yb",
             "atomic_number": 70,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:ytterbium",
             "period": 6,
@@ -967,13 +967,13 @@
                 "chemlib:gadolinium",
                 "chemlib:carbon"
             ],
-            "x": 36,
+            "x": 30,
             "y": 9
         },
         {
             "abbreviation": "Lu",
             "atomic_number": 71,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:lutetium",
             "period": 6,
@@ -981,13 +981,13 @@
                 "chemlib:terbium",
                 "chemlib:carbon"
             ],
-            "x": 38,
+            "x": 32,
             "y": 9
         },
         {
             "abbreviation": "Hf",
             "atomic_number": 72,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 4,
             "name": "chemlib:hafnium",
             "period": 6,
@@ -1001,7 +1001,7 @@
         {
             "abbreviation": "Ta",
             "atomic_number": 73,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 5,
             "name": "chemlib:tantalum",
             "period": 6,
@@ -1015,7 +1015,7 @@
         {
             "abbreviation": "W ",
             "atomic_number": 74,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 6,
             "name": "chemlib:tungsten",
             "period": 6,
@@ -1029,7 +1029,7 @@
         {
             "abbreviation": "Re",
             "atomic_number": 75,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 7,
             "name": "chemlib:rhenium",
             "period": 6,
@@ -1043,7 +1043,7 @@
         {
             "abbreviation": "Os",
             "atomic_number": 76,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 8,
             "name": "chemlib:osmium",
             "period": 6,
@@ -1057,7 +1057,7 @@
         {
             "abbreviation": "Ir",
             "atomic_number": 77,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 9,
             "name": "chemlib:iridium",
             "period": 6,
@@ -1071,7 +1071,7 @@
         {
             "abbreviation": "Pt",
             "atomic_number": 78,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 10,
             "name": "chemlib:platinum",
             "period": 6,
@@ -1085,7 +1085,7 @@
         {
             "abbreviation": "Au",
             "atomic_number": 79,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 11,
             "name": "chemlib:gold",
             "period": 6,
@@ -1099,7 +1099,7 @@
         {
             "abbreviation": "Hg",
             "atomic_number": 80,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 12,
             "name": "chemlib:mercury",
             "period": 6,
@@ -1113,7 +1113,7 @@
         {
             "abbreviation": "Tl",
             "atomic_number": 81,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 13,
             "name": "chemlib:thallium",
             "period": 6,
@@ -1127,7 +1127,7 @@
         {
             "abbreviation": "Pb",
             "atomic_number": 82,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 14,
             "name": "chemlib:lead",
             "period": 6,
@@ -1141,7 +1141,7 @@
         {
             "abbreviation": "Bi",
             "atomic_number": 83,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 15,
             "name": "chemlib:bismuth",
             "period": 6,
@@ -1155,7 +1155,7 @@
         {
             "abbreviation": "Po",
             "atomic_number": 84,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 16,
             "name": "chemlib:polonium",
             "period": 6,
@@ -1169,7 +1169,7 @@
         {
             "abbreviation": "At",
             "atomic_number": 85,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 17,
             "name": "chemlib:astatine",
             "period": 6,
@@ -1183,7 +1183,7 @@
         {
             "abbreviation": "Rn",
             "atomic_number": 86,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:radon",
             "period": 6,
@@ -1197,7 +1197,7 @@
         {
             "abbreviation": "Fr",
             "atomic_number": 87,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 1,
             "name": "chemlib:francium",
             "period": 7,
@@ -1211,7 +1211,7 @@
         {
             "abbreviation": "Ra",
             "atomic_number": 88,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 2,
             "name": "chemlib:radium",
             "period": 7,
@@ -1225,7 +1225,7 @@
         {
             "abbreviation": "Ac",
             "atomic_number": 89,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:actinium",
             "period": 7,
@@ -1233,13 +1233,13 @@
                 "chemlib:bismuth",
                 "chemlib:carbon"
             ],
-            "x": 10,
+            "x": 4,
             "y": 10
         },
         {
             "abbreviation": "Th",
             "atomic_number": 90,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:thorium",
             "period": 7,
@@ -1247,13 +1247,13 @@
                 "chemlib:polonium",
                 "chemlib:carbon"
             ],
-            "x": 12,
+            "x": 6,
             "y": 10
         },
         {
             "abbreviation": "Pa",
             "atomic_number": 91,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:protactinium",
             "period": 7,
@@ -1261,13 +1261,13 @@
                 "chemlib:astatine",
                 "chemlib:carbon"
             ],
-            "x": 14,
+            "x": 8,
             "y": 10
         },
         {
             "abbreviation": "U ",
             "atomic_number": 92,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:uranium",
             "period": 7,
@@ -1275,13 +1275,13 @@
                 "chemlib:radon",
                 "chemlib:carbon"
             ],
-            "x": 16,
+            "x": 10,
             "y": 10
         },
         {
             "abbreviation": "Np",
             "atomic_number": 93,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:neptunium",
             "period": 7,
@@ -1289,13 +1289,13 @@
                 "chemlib:francium",
                 "chemlib:carbon"
             ],
-            "x": 18,
+            "x": 12,
             "y": 10
         },
         {
             "abbreviation": "Pu",
             "atomic_number": 94,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:plutonium",
             "period": 7,
@@ -1303,13 +1303,13 @@
                 "chemlib:radium",
                 "chemlib:carbon"
             ],
-            "x": 20,
+            "x": 14,
             "y": 10
         },
         {
             "abbreviation": "Am",
             "atomic_number": 95,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:americium",
             "period": 7,
@@ -1317,13 +1317,13 @@
                 "chemlib:actinium",
                 "chemlib:carbon"
             ],
-            "x": 22,
+            "x": 16,
             "y": 10
         },
         {
             "abbreviation": "Cm",
             "atomic_number": 96,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:curium",
             "period": 7,
@@ -1331,13 +1331,13 @@
                 "chemlib:thorium",
                 "chemlib:carbon"
             ],
-            "x": 24,
+            "x": 18,
             "y": 10
         },
         {
             "abbreviation": "Bk",
             "atomic_number": 97,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:berkelium",
             "period": 7,
@@ -1345,13 +1345,13 @@
                 "chemlib:protactinium",
                 "chemlib:carbon"
             ],
-            "x": 26,
+            "x": 20,
             "y": 10
         },
         {
             "abbreviation": "Cf",
             "atomic_number": 98,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:californium",
             "period": 7,
@@ -1359,13 +1359,13 @@
                 "chemlib:uranium",
                 "chemlib:carbon"
             ],
-            "x": 28,
+            "x": 22,
             "y": 10
         },
         {
             "abbreviation": "Es",
             "atomic_number": 99,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:einsteinium",
             "period": 7,
@@ -1373,13 +1373,13 @@
                 "chemlib:neptunium",
                 "chemlib:carbon"
             ],
-            "x": 30,
+            "x": 24,
             "y": 10
         },
         {
             "abbreviation": "Fm",
             "atomic_number": 100,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:fermium",
             "period": 7,
@@ -1387,13 +1387,13 @@
                 "chemlib:plutonium",
                 "chemlib:carbon"
             ],
-            "x": 32,
+            "x": 26,
             "y": 10
         },
         {
             "abbreviation": "Md",
             "atomic_number": 101,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:mendelevium",
             "period": 7,
@@ -1401,13 +1401,13 @@
                 "chemlib:americium",
                 "chemlib:carbon"
             ],
-            "x": 34,
+            "x": 28,
             "y": 10
         },
         {
             "abbreviation": "No",
             "atomic_number": 102,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:nobelium",
             "period": 7,
@@ -1415,13 +1415,13 @@
                 "chemlib:curium",
                 "chemlib:carbon"
             ],
-            "x": 36,
+            "x": 30,
             "y": 10
         },
         {
             "abbreviation": "Lr",
             "atomic_number": 103,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 3,
             "name": "chemlib:lawrencium",
             "period": 7,
@@ -1429,13 +1429,13 @@
                 "chemlib:berkelium",
                 "chemlib:carbon"
             ],
-            "x": 38,
+            "x": 32,
             "y": 10
         },
         {
             "abbreviation": "Rf",
             "atomic_number": 104,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 4,
             "name": "chemlib:rutherfordium",
             "period": 7,
@@ -1449,7 +1449,7 @@
         {
             "abbreviation": "Db",
             "atomic_number": 105,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 5,
             "name": "chemlib:dubnium",
             "period": 7,
@@ -1463,7 +1463,7 @@
         {
             "abbreviation": "Sg",
             "atomic_number": 106,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 6,
             "name": "chemlib:seaborgium",
             "period": 7,
@@ -1477,7 +1477,7 @@
         {
             "abbreviation": "Bh",
             "atomic_number": 107,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 7,
             "name": "chemlib:bohrium",
             "period": 7,
@@ -1491,7 +1491,7 @@
         {
             "abbreviation": "Hs",
             "atomic_number": 108,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 8,
             "name": "chemlib:hassium",
             "period": 7,
@@ -1505,7 +1505,7 @@
         {
             "abbreviation": "Mt",
             "atomic_number": 109,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 9,
             "name": "chemlib:meitnerium",
             "period": 7,
@@ -1519,7 +1519,7 @@
         {
             "abbreviation": "Ds",
             "atomic_number": 110,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 10,
             "name": "chemlib:darmstadtium",
             "period": 7,
@@ -1533,7 +1533,7 @@
         {
             "abbreviation": "Rg",
             "atomic_number": 111,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 11,
             "name": "chemlib:roentgenium",
             "period": 7,
@@ -1547,7 +1547,7 @@
         {
             "abbreviation": "Cn",
             "atomic_number": 112,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 12,
             "name": "chemlib:copernicium",
             "period": 7,
@@ -1561,7 +1561,7 @@
         {
             "abbreviation": "Nh",
             "atomic_number": 113,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 13,
             "name": "chemlib:nihonium",
             "period": 7,
@@ -1575,7 +1575,7 @@
         {
             "abbreviation": "Fl",
             "atomic_number": 114,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 14,
             "name": "chemlib:flerovium",
             "period": 7,
@@ -1589,7 +1589,7 @@
         {
             "abbreviation": "Mc",
             "atomic_number": 115,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 15,
             "name": "chemlib:moscovium",
             "period": 7,
@@ -1603,7 +1603,7 @@
         {
             "abbreviation": "Lv",
             "atomic_number": 116,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 16,
             "name": "chemlib:livermorium",
             "period": 7,
@@ -1617,7 +1617,7 @@
         {
             "abbreviation": "Ts",
             "atomic_number": 117,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 17,
             "name": "chemlib:tennessine",
             "period": 7,
@@ -1631,7 +1631,7 @@
         {
             "abbreviation": "Og",
             "atomic_number": 118,
-            "bridge": "rs",
+            "bridge": "me",
             "group": 18,
             "name": "chemlib:oganesson",
             "period": 7,
@@ -1653,8 +1653,8 @@
             "abbreviation": "  ",
             "color": "blue",
             "comment": "Color label before La(57)",
-            "x": 8,
-            "y": 6
+            "x": 2,
+            "y": 9
         },
         {
             "abbreviation": "  ",
@@ -1667,38 +1667,38 @@
             "abbreviation": "  ",
             "color": "purple",
             "comment": "Color label before Ac(89)",
-            "x": 8,
-            "y": 7
+            "x": 2,
+            "y": 10
         },
         {
             "abbreviation": "Cannot be crafted",
             "color": "red",
             "x": 1,
-            "y": 9
+            "y": 12
         },
         {
             "abbreviation": "Crafting",
             "color": "yellow",
             "x": 1,
-            "y": 10
+            "y": 13
         },
         {
             "abbreviation": "No craft needed",
             "color": "green",
             "x": 1,
-            "y": 11
+            "y": 14
         },
         {
             "abbreviation": "Lantanide",
             "color": "blue",
             "x": 1,
-            "y": 12
+            "y": 15
         },
         {
             "abbreviation": "Actinide",
             "color": "purple",
             "x": 1,
-            "y": 12
+            "y": 16
         }
     ]
 }

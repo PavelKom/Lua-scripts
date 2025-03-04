@@ -31,7 +31,7 @@ NE = 'NE',
 GE = 'GE',
 GT = 'GT',
 }
-setmetatable(lib.OP, {__index = getset.GETTER_TO_UPPER(lib.OP.LT)})
+setmetatable(lib.OP, {__index = epf.GETTER_TO_UPPER(lib.OP.LT)})
 local OP_LAMBDA = {
 LT = function(a,b) return a <  b end,
 LE = function(a,b) return a <= b end,
@@ -40,7 +40,7 @@ NE = function(a,b) return a ~= b end,
 GE = function(a,b) return a >= b end,
 GT = function(a,b) return a >  b end,
 }
-setmetatable(OP_LAMBDA, {__index = getset.GETTER_TO_UPPER(OP_LAMBDA.LT)})
+setmetatable(OP_LAMBDA, {__index = epf.GETTER_TO_UPPER(OP_LAMBDA.LT)})
 lib.MATH = {
 MUL = 'MUL',
 DIV = 'DIV',
@@ -51,7 +51,7 @@ NEG = 'NEG',
 POW = 'POW',
 MOD = 'MOD',
 }
-setmetatable(lib.MATH, {__index = getset.GETTER_TO_UPPER(lib.MATH.MUL)})
+setmetatable(lib.MATH, {__index = epf.GETTER_TO_UPPER(lib.MATH.MUL)})
 local MATH_LAMBDA = {
 MUL = function(a,b) return a * b end,
 DIV = function(a,b) return a / b end,
@@ -62,7 +62,7 @@ NEG = function(a,b) return 0 - a end,
 POW = function(a,b) return a ^ b end,
 MOD = function(a,b) return a % b end,
 }
-setmetatable(MATH_LAMBDA, {__index = getset.GETTER_TO_UPPER(MATH_LAMBDA.MUL)})
+setmetatable(MATH_LAMBDA, {__index = epf.GETTER_TO_UPPER(MATH_LAMBDA.MUL)})
 lib.LOGIC_GATE = {
 --			  00| 01| 10| 11
 AND='AND',	-- 0|  0|  0|  1
@@ -72,7 +72,7 @@ NOR='NOR',	-- 1|  0|  0|  0
 XOR='XOR',	-- 0|  1|  1|  0
 XNOR='XNOR',-- 1|  0|  0|  1
 }
-setmetatable(lib.LOGIC_GATE, {__index = getset.GETTER_TO_UPPER(lib.LOGIC_GATE.AND)})
+setmetatable(lib.LOGIC_GATE, {__index = epf.GETTER_TO_UPPER(lib.LOGIC_GATE.AND)})
 local function _stubA(a) return false end
 local lazyA = {
 	AND = function(a)
@@ -100,7 +100,7 @@ NOR  = function(a,b) return not (a or b) end,
 XOR  = function(a,b) return not (not a == not b) end,
 XNOR = function(a,b) return not a == not b end,
 }
-setmetatable(LOGIC_LAMBDA, {__index = getset.GETTER_TO_UPPER(LOGIC_LAMBDA.AND)})
+setmetatable(LOGIC_LAMBDA, {__index = epf.GETTER_TO_UPPER(LOGIC_LAMBDA.AND)})
 
 local TO_STRING_LAMBDA = {
 LT = function(a,b) return string.format("%s < %s", a,b) end,
@@ -159,16 +159,20 @@ function Trigger:new(item1, math_op1, const1, op, item2, math_op2, const2)
 	}
 	t.test = function(bridge) return Trigger.test(t, bridge) end
 	
-	return setmetatable(t, Trigger)
+	return setmetatable(t, {__index=Trigger, __subtype='Trigger'})
 end
 function Trigger.test(self, bridge)
 	local a = self.cA
 	if self.A then
-		a = MATH_LAMBDA[self.opA](bridge.getItem(self.A), a)
+		local _a = bridge.getItem(self.A)
+		_a = _a and _a.amount or 0
+		a = MATH_LAMBDA[self.opA](_a, a)
 	end
 	local b = self.cB
 	if self.B then
-		b = MATH_LAMBDA[self.opB](bridge.getItem(self.B), b)
+		local _b = bridge.getItem(self.B)
+		_b = _b and _b.amount or 0
+		b = MATH_LAMBDA[self.opB](_b, b)
 	end
 	return OP_LAMBDA[self.op](a, b)
 end
@@ -213,9 +217,9 @@ function TriggerGroup:new(op, ...)
 	local t = {op=op, t={...}}
 	t.op = op or lib.LOGIC_GATE.AND
 	t.test = function(bridge)
-		TriggerGroup(t, bridge)
+		return TriggerGroup.test(t, bridge)
 	end
-	return setmetatable(t, TriggerGroup)
+	return setmetatable(t, {__index=TriggerGroup, __subtype='TriggerGroup'})
 end
 function TriggerGroup.test(self, bridge)
 	local A, B, res1, res2
@@ -283,7 +287,7 @@ function Task:new(item, isFluid, amount, batch, trigger)
 	expect(2, isFluid, "boolean", "nil")
 	expect(3, amount, "number", "nil")
 	expect(4, batch, "number", "nil")
-	expect(5, trigger, "Trigger", "TriggerGroup", "nil")
+	expect(5, trigger, "Trigger", "TriggerGroup", "table", "nil")
 	
 	item = _parse(item)
 	amount = amount or lib.DEFAULT_AMOUNT
@@ -294,10 +298,10 @@ function Task:new(item, isFluid, amount, batch, trigger)
 		batch=batch or 1,
 		trigger=trigger or Trigger(item,_,_,_,_,_,amount)
 	}
-	self.test = function(bridge) return Task.test(self, bridge) end
-	self.craft = function(bridge, callback) return Task.craft(self, bridge, callback) end
+	task.test = function(bridge) return Task.test(task, bridge) end
+	task.craft = function(bridge, callback) return Task.craft(task, bridge, callback) end
 	
-	return setmetatable(task, Task)
+	return setmetatable(task, {__index=Task, __subtype='Task'})
 end
 function Task.test(self, bridge)
 	return self.trigger.test(bridge)
@@ -310,7 +314,7 @@ function Task.craft(self, bridge, callback)
 	elseif bridge.isItemCrafting(self.item) then -- Item already crafting
 		if callback then callback(-2, self, bridge) end
 		return -2
-	elseif not self.trigger.test(bridge) then-- Conditions not met
+	elseif not self.trigger.test(bridge) then -- Conditions not met
 		if callback then callback(-1, self, bridge) end
 		return -1
 	end
@@ -325,8 +329,8 @@ function Task.craft(self, bridge, callback)
 	end
 	return result
 end
-function Task.craftFluid(self, bridge)
-	local t = tabl.copy(self.item)
+function Task.craftItem(self, bridge)
+	local t = table.copy(self.item)
 	t.count = self.batch
 	local result = bridge.craftItem(t)
 	while t.count > 1 and not result do
@@ -337,7 +341,7 @@ function Task.craftFluid(self, bridge)
 	return 0
 end
 function Task.craftFluid(self, bridge)
-	local t = tabl.copy(self.item)
+	local t = table.copy(self.item)
 	t.count = self.batch
 	local result = bridge.craftFluid(t)
 	while t.count > 0.001 and not result do

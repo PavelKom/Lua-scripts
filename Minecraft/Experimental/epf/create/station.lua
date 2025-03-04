@@ -99,9 +99,9 @@ loaded = "railways:loaded",
 local DEFAULT_ITEM = {id="minecraft:air",count=1}
 local DEFAULT_FLUID = {id="minecraft:air",count=1}
 local DEFAULT_REDSTONE_LINK = {{id="minecraft:air",count=1},{id="minecraft:air",count=1}}
-setmetatable(DEFAULT_ITEM, {__tostring = serializeJSON})
-setmetatable(DEFAULT_FLUID, {__tostring = serializeJSON})
-setmetatable(DEFAULT_REDSTONE_LINK, {__tostring = serializeJSON})
+setmetatable(DEFAULT_ITEM, {__tostring = textutils.serializeJSON})
+setmetatable(DEFAULT_FLUID, {__tostring = textutils.serializeJSON})
+setmetatable(DEFAULT_REDSTONE_LINK, {__tostring = textutils.serializeJSON})
 
 -- Warn message if require
 local function warn2(no_warn, ...)
@@ -425,7 +425,7 @@ function Schedule.new(data)
 	
 	-- Set blocks
 	self.setEntries = function(data, no_warn)
-		self.schedule.entries = ENTRIES(data, no_warn)
+		self.schedule.entries = SCHEDULE_BLOCKS_VALIDATE.ENTRIES(data, no_warn)
 	end
 	self.setEntry = function(entry_id, instruction, conditions, no_warn)
 		entry_id = tonumber(entry_id) or #self.schedule.entries

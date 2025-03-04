@@ -22,9 +22,9 @@ function Peripheral.__init(self)
 	self.__setter = {
 		label = function(label) return pcall(self.setDiskLabel,label) end,
 	}
-	play = function() return self.playAudio() end
-	stop = function() return self.stopAudio() end
-	eject = function() return self.ejectDisk() end
+	self.play = function() return self.playAudio() end
+	self.stop = function() return self.stopAudio() end
+	self.eject = function() return self.ejectDisk() end
 	
 	return self
 end

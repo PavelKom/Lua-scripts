@@ -68,7 +68,7 @@ local function _reverse_queue(queue)
 			end
 		elseif subtype(queue[i]) == 'Book' then
 			for j=#queue[i], 1, -1 do
-				r[#r+1] = libr.books[j]
+				r[#r+1] = queue.pages[j]
 			end
 		elseif subtype(queue[i]) == 'Page' then
 			r[#r+1] = queue[i]
@@ -156,7 +156,7 @@ function Peripheral.__init(self)
 		
 		return printed
 	end
-	self.printLibrary = function(libr)
+	self.printLibrary = function(libr, noCheck)
 		expect(1,libr, "Library")
 		if not noCheck then
 			local pages = 0
@@ -229,7 +229,7 @@ function Page.new(text, title, fixed)
 	expect(3,fixed, "boolean", "nil")
 	local self = {title=tostring(title),lines = {}}
 	if type(text) == 'string' then
-		local l
+		local l, t
 		for i=1, Page.LINES_PER_PAGE do
 			if #text == 0 then break end
 			l, t = epf.iterLineEx(t, Page.LINE_MAX_LENGTH, fixed)
@@ -349,7 +349,7 @@ function Book.newEx(text, titles, name, fixed)
 		if l == 0 then l = Page.LINES_PER_PAGE * Book.MAX_PAGES end
 		l = math.ceil(l/Page.LINES_PER_PAGE)
 		for i=l, 1, -1 do
-			self.pages[i], text = Page.newEx(text, table.remove(titles), true)
+			self.pages[i], text = Page.newEx(text, table.remove(titles))
 		end
 	end
 	
@@ -404,8 +404,8 @@ function Library.new(text, titles, name, fixed)
 	local self = {books={}, name=name or "Unnamed library"}
 	
 	while #text > 0 do
-		local n = string.format("%s #%i", name or "Unnamed book", #books+1)
-		self.books[#l.books+1], text = Book.new(text, titles, n, true)
+		local n = string.format("%s #%i", name or "Unnamed book", #self.books+1)
+		self.books[#self.books+1], text = Book.new(text, titles, n, true)
 	end
 	
 	setmetatable(self, libraryMeta)
@@ -448,7 +448,6 @@ function Library.fromFile(path)
 	if fs.exists(path) and not fs.isDir(path) then
 		local f = io.open(path, 'r')
 		local t = f:read('*a')
-		print(type(t))
 		local l = Library(t)
 		f:close()
 		return l
