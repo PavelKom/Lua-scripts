@@ -119,6 +119,17 @@ POW = function(a,b) return string.format("%s ^ %s", a,b) end,
 MOD = function(a,b) return string.format("%s %% %s", a,b) end,
 }
 
+local function _tbl_eq(self, other)
+	if type(self) ~= 'table' or type(other) ~= 'table' then return false end
+	for k, v in pairs(self) do
+		if other[k] ~= v then return false end
+	end
+	for k, v in pairs(other) do
+		if self[k] == nil then return false end
+	end
+	return true
+end
+
 --[[
 	TriggerGroup(OP)
 	|			|
@@ -159,7 +170,7 @@ function Trigger:new(item1, math_op1, const1, op, item2, math_op2, const2)
 	}
 	t.test = function(bridge) return Trigger.test(t, bridge) end
 	
-	return setmetatable(t, {__index=Trigger, __subtype='Trigger'})
+	return setmetatable(t, {__index=Trigger, __subtype='Trigger', __eq=Trigger.eq})
 end
 function Trigger.test(self, bridge)
 	local a = self.cA
@@ -201,6 +212,16 @@ function Trigger.export(self)
 		type="Trigger",
 	}
 end
+function Trigger.eq(self, other)
+	return	subtype(other) == 'Trigger' and
+			_tbl_eq(self.A,other.A) and
+			self.opA == other.opA and
+			self.cA == other.cA and
+			self.op == other.op and
+			_tbl_eq(self.B,other.B) and
+			self.opB == other.opB and
+			self.cB == other.cB
+end
 lib.Trigger = setmetatable(Trigger,{
 	__tostring = function(self)
 		if Trigger == self then return "Trigger constructor" end
@@ -219,7 +240,7 @@ function TriggerGroup:new(op, ...)
 	t.test = function(bridge)
 		return TriggerGroup.test(t, bridge)
 	end
-	return setmetatable(t, {__index=TriggerGroup, __subtype='TriggerGroup'})
+	return setmetatable(t, {__index=TriggerGroup, __subtype='TriggerGroup', __eq=TriggerGroup.eq})
 end
 function TriggerGroup.test(self, bridge)
 	local A, B, res1, res2
@@ -260,6 +281,11 @@ function TriggerGroup.export(self)
 		t[#t+1] = v.export()
 	end
 	return {op=self.op,t=t,type="TriggerGroup"}
+end
+function TriggerGroup.eq(self, other)
+	return	subtype(other) == 'TriggerGroup'and
+			self.op == other.op and
+			_tbl_eq(self.t, other.t)
 end
 lib.TriggerGroup = setmetatable(TriggerGroup,{
 	__tostring = function(self)
@@ -381,6 +407,14 @@ function Task.fromJson(tbl)
 		t.trigger = Trigger.fromJson(_tbl.trigger)
 	end
 	return t
+end
+function Task.eq(self, other)
+	return	subtype(other) == 'Task'and
+			_tbl_eq(self.item, other.item) and
+			self.isFluid == other.isFluid and
+			self.amount == other.amount and
+			self.batch == other.batch and
+			self.trigger == other.trigger
 end
 
 lib.Task = setmetatable(Task,{
