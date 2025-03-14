@@ -66,17 +66,32 @@ local c = addCraft("minecraft:cobblestone")
 	addCraft("minecraft:stone", nil, nil, nil, nil, nil, c)
 		addCraft("minecraft:stonebricks")
 
--- AE2 Cell components. TODO: Add 1024,... from other mods
+-- AE2 Cell components
 local cell_format = "ae2:cell_component_%ik"
 newChain('me')
-for i=0, 4 do
+for i=0, 4 do -- 1 -> 256
 	addCraft(string.format(cell_format,4^i), nil, 3, 1)
 	-- cell_component_1k
 		-- cell_component_4k
 			-- ...
 end
+cell_format = "ae2additions:cell_component_%i"
+for i=0, 4 do -- 1024 -> 65536
+	addCraft(string.format(cell_format,1024*4^i), nil, 3, 1)
+end
+addCraft("ae2additions:super_cell_component_65m", nil, 1, 1)
 
-
+-- AllTheCompressed
+local comp_format = "allthecompressed:%s_%%ix"
+local comp_materials = {"cobblestone"}
+for _, mat in pairs(comp_materials) do
+	local buffer = string.format(comp_format,mat)
+	newChain('me')
+	addCraft(string.format(buffer, 1), nil, 9, 9)
+	for i=2, 9 do
+		addCraft(string.format(buffer, i), nil, 9, 1)
+	end
+end
 
 ------------------------------------------------------------------
 end
@@ -84,7 +99,7 @@ local RESULT = {me={tasks={}}, rs={tasks={}}}
 for _, chain in pairs(CHAINS) do
 	local bridge = chain.bridge
 	local tasks = RESULT[bridge].tasks
-	for _, craft in pairs(chain) do
+	for _, craft in pairs(chain.tasks) do
 		local skip = false
 		for _, task in pairs(tasks) do
 			if craft == task then skip = true; break end

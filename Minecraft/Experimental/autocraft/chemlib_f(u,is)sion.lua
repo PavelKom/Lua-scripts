@@ -3,11 +3,15 @@
 ]]
 ----------------------------- CONFIG -----------------------------
 local MONITOR_NAME = nil
-local AMOUNT_CRAFT = 100
-local AMOUNT_MATERIAL = 100
-local AMOUNT_EXCESS = 200
+local AMOUNT_CRAFT = 10000
+local AMOUNT_MATERIAL = 1000
+local AMOUNT_EXCESS = 200000
 local BATCH = 64
+--local MAIN_MATERIAL_LOOP = {[2]=true,[4]=true,[8]=true}
 ------------------------------------------------------------------
+local input = {...}
+local async_craft = input[1]
+local DEBUG = input[3]
 local function script_path()
     local str = debug.getinfo(2, "S").source:sub(2)
     return str:match("(.*/)")
@@ -37,9 +41,11 @@ for _, element in pairs(element_cfg.elements) do
 	
 	if element.atomic_number then
 		local t = TriggerGroup(nil, Trigger({name=element.name},nil,nil,nil,nil,nil, AMOUNT_CRAFT))
-		for _, req in pairs(element.required or {}) do
-			t.t[#t.t+1] = Trigger({name=req},nil,nil,TriggerLib.OP.GE,nil,nil, AMOUNT_MATERIAL)
-		end
+		--if not MAIN_MATERIAL_LOOP[element.atomic_number] then
+			for _, req in pairs(element.required or {}) do
+				t.t[#t.t+1] = Trigger({name=req},nil,nil,TriggerLib.OP.GE,nil,nil, AMOUNT_MATERIAL)
+			end
+		--end
 		local task = Task({name=element.name}, false, AMOUNT_CRAFT, BATCH, t)
 		task.x = element.x
 		task.y = element.y
@@ -68,6 +74,8 @@ local function callback(res, task, bridge)
 	monitor.pos(task.x, task.y)
 	monitor.bg = _c
 	monitor.write(task.label)
+	if DEBUG and res > 0 then print(res, task.item.name or task.item.fingerprint) end
+	if res > 0 then sleep(0); async_craft(task, bridge, callback) end
 end
 if #RESULT.me.tasks > 0 then RESULT.me.callback = callback end
 if #RESULT.rs.tasks > 0 then RESULT.rs.callback = callback end
